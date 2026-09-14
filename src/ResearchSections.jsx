@@ -34,6 +34,7 @@ export function KeywordPage({ onCreate, onLibrary }) {
     <div className="cs-page">
       <div className="cs-page-intro">
         <div>
+          <h2>Find your next opportunity.</h2>
           <p>Turn the questions people ask into content they find.</p>
         </div>
         <button className="cs-button filled" onClick={onCreate}>
@@ -162,6 +163,9 @@ export function KeywordPage({ onCreate, onLibrary }) {
               <h3>A good place to start</h3>
               <Sparkles size={17} />
             </div>
+            <div className="cs-opportunity-icon">
+              <Target size={32} />
+            </div>
             <h3 className="cs-opportunity-title">
               Vegan office catering options
             </h3>
@@ -184,7 +188,18 @@ export function KeywordPage({ onCreate, onLibrary }) {
               Plan this topic <ArrowUpRight size={14} />
             </button>
           </section>
-          <button className="cs-button full" onClick={onLibrary}>Open content library <ArrowUpRight size={16} /></button>
+          <button className="cs-calendar-link" onClick={onLibrary}>
+            <span className="cs-soft-icon purple">
+              <FileText size={19} />
+            </span>
+            <h3>Give your research a next step.</h3>
+            <p>
+              Check the content you already have before starting something new.
+            </p>
+            <span>
+              Explore your library <ArrowUpRight size={14} />
+            </span>
+          </button>
         </aside>
       </div>
       <div className="cs-page-footer">
@@ -192,7 +207,7 @@ export function KeywordPage({ onCreate, onLibrary }) {
           <i />
           LunchLink workspace
         </span>
-        <span>Historical source data</span>
+        <span>Historical source data · Decorative metric mini-charts</span>
       </div>
     </div>
   );
@@ -202,6 +217,7 @@ export function VisibilityPage({ onKeywords }) {
     <div className="cs-page">
       <div className="cs-page-intro">
         <div>
+          <h2>Be part of the answer.</h2>
           <p>See where your brand appears in AI search.</p>
         </div>
         <span className="cs-snapshot-label">
@@ -249,11 +265,43 @@ export function VisibilityPage({ onKeywords }) {
             <h3>Your visibility baseline</h3>
             <span>Source snapshot</span>
           </div>
-          <div className="iw-visibility-report">
-            <FileText size={28} />
-            <h4>LunchLink · AI search report</h4>
-            <p>Recorded August 29, 2026</p>
-            <dl><div><dt>Visibility score</dt><dd>6%</dd></div><div><dt>Citations found</dt><dd>6</dd></div><div><dt>Comparison set</dt><dd>5 competitors</dd></div></dl>
+          <div className="cs-visibility-ring">
+            <svg
+              viewBox="0 0 260 220"
+              aria-label="6 percent AI visibility"
+              role="img"
+            >
+              <path
+                d="M37 176a105 105 0 1 1 186 0"
+                fill="none"
+                stroke="#eeecf6"
+                strokeWidth="24"
+                strokeLinecap="round"
+              />
+              <path
+                d="M37 176a105 105 0 1 1 186 0"
+                fill="none"
+                stroke="#b5ade7"
+                strokeWidth="24"
+                strokeLinecap="round"
+                pathLength="100"
+                strokeDasharray="6 100"
+              />
+              <path
+                d="M58 164a81 81 0 1 1 144 0"
+                fill="none"
+                stroke="#e1deef"
+                strokeWidth="2"
+                strokeDasharray="1 6"
+              />
+            </svg>
+            <div>
+              <Sparkles size={22} />
+              <strong>
+                6<span>%</span>
+              </strong>
+              <p>AI visibility score</p>
+            </div>
           </div>
           <div className="cs-ai-note">
             <CircleCheck size={17} />

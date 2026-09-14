@@ -1,227 +1,184 @@
 ---
-name: "Uplift AI Dashboard"
-description: "The selected Inkwise document dashboard composition with Uplift AI content operations."
+name: Uplift AI Dashboard
+description: A compact content operations dashboard following the selected Clinexa screen.
 colors:
-  ink: "#303136"
-  supporting: "#6b7180"
-  purple: "#7485e8"
-  primary-action: "#5a6bc4"
-  primary-hover: "#5668c0"
-  navigation: "#7788e8"
-  canvas: "#eff1f6"
-  panel: "#f7f8fb"
+  ink: "#282c36"
+  supporting: "#68717e"
+  purple: "#6363ac"
+  panel: "rgba(255, 255, 255, 0.79)"
   white: "#ffffff"
-  line: "#eceef3"
-  search: "#fafbfe"
-  gauge-blue: "#7e8ee6"
-  gauge-orange: "#efbd85"
-  gauge-green: "#a0d68e"
-  scheduled-fill: "#edf0fa"
-  scheduled-ink: "#5266b4"
-  published-fill: "#e7f4df"
-  published-ink: "#416f31"
-  review-fill: "#fbefdf"
-  review-ink: "#94662d"
+  line: "#e9edf2"
+  green: "#b4dba5"
+  chart-lavender: "#b8b7f4"
+  chart-social: "#b4dca4"
+  chart-blue: "#95cdf7"
+  chart-gold: "#f7d494"
+  chart-neutral: "#e7ebef"
 typography:
   headline:
     fontFamily: "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
-    fontSize: "32px"
-    fontWeight: 600
-    lineHeight: 1.25
-    letterSpacing: "-0.8px"
-  title:
-    fontSize: "20px"
-    fontWeight: 600
-    lineHeight: 1.4
-    letterSpacing: "-0.25px"
-  body:
-    fontSize: "16px"
-    fontWeight: 400
-    lineHeight: 1.5
-  document-title:
-    fontSize: "16px"
-    fontWeight: 500
-    lineHeight: 1.5
-    letterSpacing: "-0.15px"
-  metadata:
-    fontSize: "14px"
-    fontWeight: 400
-    lineHeight: 1.5
-  gauge:
-    fontSize: "32px"
+    fontSize: "23px"
     fontWeight: 500
     letterSpacing: "-0.7px"
+  metric:
+    fontFamily: "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
+    fontSize: "33px"
+    fontWeight: 500
+    lineHeight: 1.1
+    letterSpacing: "-1.4px"
+  title:
+    fontSize: "15px"
+    fontWeight: 500
+    letterSpacing: "-0.45px"
+  body:
+    fontSize: "12px"
+    fontWeight: 400
+  card-title:
+    fontSize: "12px"
+    fontWeight: 500
+    lineHeight: 1.45
+    letterSpacing: "-0.25px"
+  card-meta:
+    fontSize: "10px"
+    fontWeight: 400
+    lineHeight: 1.5
 rounded:
-  status: "3px"
-  square: "7px"
-  preview: "8px"
-  document: "9px"
-  feed: "10px"
-  action: "11px"
-  field: "12px"
-  document-group: "15px"
-  mobile-panel: "18px"
-  panel: "23px"
+  field: "10px"
+  card: "16px"
+  mobile-panel: "17px"
+  panel: "20px"
   circle: "50%"
 spacing:
-  tight: "7px"
+  small: "8px"
   compact: "10px"
-  medium: "15px"
-  gutter: "24px"
-  panel-inline: "22px"
-  panel-block: "21px"
+  medium: "16px"
+  gutter: "18px"
+  panel: "20px"
+  roomy: "24px"
 components:
-  button-primary:
-    backgroundColor: "{colors.primary-action}"
-    textColor: "{colors.white}"
-    rounded: "{rounded.action}"
-    padding: "10px 17px"
-    height: "44px"
-  button-primary-hover:
-    backgroundColor: "{colors.primary-hover}"
-  button-secondary:
-    backgroundColor: "{colors.white}"
-    textColor: "#686a75"
-    rounded: "{rounded.action}"
-    padding: "10px 15px"
-    height: "44px"
-  input-search:
-    backgroundColor: "{colors.search}"
-    rounded: "{rounded.field}"
-    padding: "0 14px"
-    height: "48px"
-    width: "315px"
-  navigation-active:
-    backgroundColor: "{colors.navigation}"
-    textColor: "{colors.white}"
-    rounded: "{rounded.field}"
-    size: "44px"
-  status-scheduled:
-    backgroundColor: "{colors.scheduled-fill}"
-    textColor: "{colors.scheduled-ink}"
-    rounded: "{rounded.status}"
-    padding: "4px 6px"
   panel:
     backgroundColor: "{colors.panel}"
     rounded: "{rounded.panel}"
-    padding: "21px 22px"
-  document-card:
-    backgroundColor: "{colors.white}"
-    rounded: "{rounded.document}"
-    padding: "0 0 4px"
-  activity-card:
-    backgroundColor: "{colors.white}"
-    rounded: "{rounded.feed}"
-    padding: "18px 14px"
+  content-card:
+    backgroundColor: "transparent"
+    rounded: "{rounded.card}"
+    padding: "13px 11px 13px"
+  button-primary:
+    backgroundColor: "#6c6caf"
+    textColor: "{colors.white}"
+    rounded: "18px"
+    padding: "11px 16px"
+  button-primary-hover:
+    backgroundColor: "#575795"
+  button-secondary:
+    backgroundColor: "transparent"
+    rounded: "{rounded.panel}"
+    padding: "8px 12px"
+  button-circle:
+    backgroundColor: "transparent"
+    rounded: "{rounded.circle}"
+    size: "29px"
+  input-search:
+    backgroundColor: "#f1f3f7"
+    rounded: "{rounded.field}"
+    padding: "10px 15px"
+  navigation-active:
+    backgroundColor: "#6666ad"
+    textColor: "{colors.white}"
+    rounded: "{rounded.circle}"
+    size: "39px"
+  status-scheduled:
+    backgroundColor: "#eaf2e5"
+    textColor: "#628356"
+    rounded: "15px"
+    padding: "6px 10px"
 ---
 
 # Design System: Uplift AI Dashboard
 
 ## Overview
 
-**Creative North Star: "The selected Inkwise document workspace"**
+**Creative North Star: "The selected Clinexa dashboard screen"**
 
-This system records the implemented React and Vite dashboard, following the user-pinned Inkwise cover composition with Uplift AI product content. Its cool gray canvas, near-white panels, periwinkle navigation, readable Inter typography, and miniature document previews establish a quiet working surface. The reference determines the visual hierarchy; Uplift AI supplies the terminology and LunchLink workspace content.
-
-The home view pairs a broad content column with a narrower activity and setup column. The interface stays flat and softly rounded, with white nested surfaces and fine rules organizing dense information. The selected authority is the [Inkwise dashboard reference](https://dribbble.com/shots/27222028-UI-UX-Design-Document-Editor-Dashboard-Inkwise), preserved in `.impeccable/references/inkwise-cover.png` and `inkwise.png`. The user’s later readability request establishes larger shared type roles throughout every section. The eight-node periwinkle ring is the active mark.
+This system records the implemented Uplift AI dashboard in React and Vite. Its visual authority is the user's selected screen inside the Clinexa laptop reference, adapted to Uplift's content operations terminology. The cool lavender-to-mint canvas, soft white panels, compact Inter typography, purple icon rail, and pastel charts follow that selection; this is not a newly invented visual identity.
 
 **Key Characteristics:**
 
-- A white vertical icon rail beside a cool gray working canvas.
-- Four miniature document previews above a six-row content table.
-- A compact activity feed and a three-color semicircular setup gauge.
-- Soft rectangular controls, restrained shadows, and responsive contained scrolling.
+- Quiet tonal separation between the canvas and panels.
+- Compact text with large, steady metric numerals.
+- Rounded controls, slim SVG icons, and pastel data graphics.
+- A dense desktop overview that stacks into a mobile workspace.
 
 ## Colors
 
-### Primary
+Purple identifies navigation and primary actions. Green emphasizes published activity. Lavender, green, blue, gold, and pale gray consistently identify the five distribution categories; their softer fills keep the numeric and textual labels prominent.
 
-Periwinkle identifies the active navigation and operational actions. The main New content action uses the deeper reviewed primary-action tone so its white label remains distinct. Keep this distinction when extending the shell.
+Neutral ink carries headings and values; supporting text uses a quieter slate. Translucent white panels expose the cool canvas gently. The canvas is the CSS `--canvas` gradient, recorded in the sidecar because it is an image value rather than a color token.
 
-### Secondary
-
-Blue, orange, and green divide the setup gauge and identify the three linked overview counts. Scheduled, published, and review status chips pair pale fills with darker category-specific text. The small AI shortcut uses a warm peach-to-mauve gradient; this is a local accent rather than the page background.
-
-### Neutral
-
-Cool gray forms the canvas; near-white defines panels; white defines document groups, activity cards, search-adjacent controls, and the navigation rail. Dark ink establishes headings and content names, reviewed slate supports dates and table labels, and pale lines divide rows. Existing content sections retain their darker section-muted ink and category-specific pastels.
-
-**The Labeled Data Rule.** Pair status and gauge colors with text; preserve the source snapshot, sample schedule, and session-only disclosures.
+**The Labeled Data Rule.** Pair chart colors and status dots with text; preserve the visible illustrative-data and snapshot labels.
 
 ## Typography
 
-Inter is loaded locally in regular, medium, and semibold weights, with the platform sans-serif stack as fallback. Shared roles in `src/typography.css` are normative: content is 16px, metadata and controls are 14px, section headings are 20px, and page titles are 32px on desktop and 28px at 700px and below. These reading roles do not shrink on mobile. The home setup value is 32px; operational summary values are 28px (26px at 600px and below). Calendar period/date displays and dialog titles retain their distinct 22–28px hierarchy.
+Inter is the single typeface, with the platform sans-serif stack as fallback. Medium weight establishes hierarchy without heavy display styling. The normative role values above describe the default desktop sizes, not an imposed modular scale.
 
-Home document titles, table names, library titles, and calendar event titles use the body role and wrap as needed. Metadata wraps rather than forcing the page wider. Body and document titles use a 1.5 line height; home section headings use 1.4 and page titles use 1.25. Section titles are medium or semibold. Miniature paper text at roughly 3–6px is permitted only inside the aria-hidden `DocumentPreview` artwork, never as readable interface copy.
+Page headings lead; metric values use tabular numerals and tight tracking; section titles, content titles, and metadata step down clearly. Card titles retain two-line clamping and their final readable size across breakpoints. Content metadata wraps rather than becoming a smaller desktop transcription. Detail copy uses comfortable line heights, with the informational block capped at 70 characters.
 
-**The Reading Roles Rule.** Keep content at 16px and supporting text at 14px across breakpoints; use local scrolling for dense data instead of shrinking text.
+Metric numerals adapt from the default size to 38px on wide screens, 29px in compact desktop, 32px on tablet, and 27px on mobile. Section headings similarly adapt to available space. Tiny chart and footer annotations remain secondary; their smallest existing sizes are not a reusable body-text standard.
 
 ## Layout
 
-The default desktop shell combines a sticky 76px white rail with a flexible main region capped at 1800px, a 24px gutter, and 24px right inset. A search header of 89px precedes the greeting and creation toolbar. The home grid uses a 2.74:1 column ratio with a right-column minimum of 280px and a 10px gap. Four equal document previews occupy a shared white group above the six-row table; activity cards and the setup gauge occupy the right column. Panels use 21px vertical and 22px horizontal padding by default.
+The desktop shell combines a sticky 56px navigation rail with a flexible main region capped at 1700px. Four equal metric cards precede a two-column grid: the production chart and upcoming items occupy the wider column; the distribution panel spans both rows in the narrower column. The default column ratio is 2.12:1, with an 18px gutter, a 350px first row, and an auto-expanding second row of at least 214px. Three upcoming cards share a row.
 
-- At 1550px and above, the rail becomes 82px, the shell gap 28px, the right inset 32px, and the header 98px. Shared type overrides preserve the same readable roles.
-- At 1200px and below, the home content becomes one column and its activity and overview panels share a two-column row beneath it. The toolbar wraps below the greeting as needed; table channels remain visible.
-- At 700px and below, 16px side insets and 80px bottom space accommodate fixed navigation. Recent previews become two columns; activity and setup panels stack. The home table keeps a 740px minimum inside its positioned horizontal scroll wrapper. The body minimum is 320px. Toolbar controls wrap while retaining 14px labels and 44px action heights.
-- Desktop navigation can expand to 205px with visible labels. At desktop heights of 850px or less, rail spacing tightens. Mobile uses a 62px rounded bar inset 10px from each side and 9px from the bottom; More opens a labeled two-column menu above it.
+- At 1450px and above, spacing and chart height increase; dashboard rows become 385px and 238px.
+- At 1150px and below, gutters tighten, the column ratio becomes 1.85:1, and content introductions stack vertically. Between 851px and 1150px, card status text is hidden.
+- At 850px and below, metrics become two columns. The main panels stack as production, distribution, upcoming; distribution retains an internal two-column chart-and-legend layout. Detail rows hide their date column.
+- At 560px and below, the rail becomes a fixed 66px bottom navigation, the shell reserves 78px below content, and the More control opens all destinations in a two-column menu. Upcoming cards become one column; metadata wraps; toolbars stack; distribution insight spans both internal columns. The minimum supported body width is 360px.
 
-The only mounted home is `src/InkwiseDashboard.jsx`. `src/main.jsx` imports `src/inkwise.css` for the home and shell, then `src/typography.css` for shared roles and home readability overrides, then `src/workspace.css` for operational sections and overlays inside `@scope (.workspace-view)`. These views and overlays carry the `.workspace-view` boundary. The former four operational stylesheets live in `.impeccable/archive/previous-workspace-styles/` and must not be imported. Alternate dashboards remain under `.impeccable/archive/` and must not be mounted.
+### Section extension: library, calendar, and research
 
-The library defaults to Grid, with four white quick-action cards above a desktop layout containing a 235px document navigation column on the left. Its asset grid has three columns, grows to four at 1700px, becomes two at 1200px and one at 600px. The navigation column narrows to 215px at 1200px and moves below the assets at 850px. Quick actions become two columns at 850px. Calendar side content moves below the calendar at 1200px; AI visibility panels and four-part summary strips become two-column or stacked layouts at 850px.
-
-Dense data scrolls within its own surface: the library list has a 780px minimum at 600px and below; keyword rows have a 560px minimum within `.cs-keyword-table` at that breakpoint. The calendar month keeps a 1120px grid inside `.cs-month-grid`, and week view retains seven columns with a 160px minimum each. Text wraps inside these cells. Dialogs use the viewport width minus 32px, cap their height, and scroll internally; the composer’s paired fields stack at 600px.
-
-Current reference and rendered evidence paths are recorded in the sidecar. Build and rendered home plus an operational view are required after changing stylesheet boundaries. Evidence describes the implementation and does not claim pixel identity with the source image.
+The added sections reuse the original shell, panels, Inter typography, pastel graphics, and rounded controls. Their own layout tightens at 1250px; at 1000px, library and calendar sidebars move below the main surface and summary metrics become two columns. At 700px, asset grids use two columns and the seven-day week view scrolls horizontally instead of crushing its events. The existing bottom navigation applies at 560px. The research panels also stack at 1000px.
 
 ## Elevation & Depth
 
-The home composition relies on solid tonal layering rather than raised cards: cool canvas, near-white panels, and white inner cards. Navigation has no active-state shadow. Floating menus, the mobile rail, dialogs, and toasts use diffuse shadows. The dialog backdrop dims the workspace. Exact overlay shadows, focus treatment, and the home shortcut’s local gradient are in the sidecar.
+Panels rely primarily on tonal separation. Metric hover introduces a very faint shadow; floating menus, tooltips, dialogs, and toasts use progressively clearer diffuse shadows. The modal backdrop dims and blurs the page. The bottom navigation uses a translucent, blurred surface. Exact shadows and backdrop treatments live in the sidecar.
 
 **The Overlay Depth Rule.** Reserve substantial shadow and backdrop blur for content that floats over the workspace.
 
 ## Shapes
 
-Large rounded panels contain smaller rounded white groups, document thumbnails, and compact rectangular controls. The active navigation uses a rounded square, not a circle. Initial avatars, channel markers, notification dots, gauge endpoints, and the eight-node brand ring use circular geometry. Fine horizontal rules divide table rows; small rectangular status tags avoid large pill silhouettes. The setup gauge uses three rounded SVG arc segments and subtle fading fills.
-
-Document previews are HTML/CSS miniature sheets with varied text, blocks, and columns. Icons, logo, and the setup gauge use SVG. Workspace avatars use initials and document icons. `Logo` in `src/main.jsx` and `public/favicon.svg` use eight rounded nodes rotated around a ring. Earlier arrow marks and contributor portraits are retired; portrait assets live in `.impeccable/archive/previous-workspace-assets/`. There are no active photo assets. Reference and review images are evidence only and are not shipped as interface images.
+Large soft panel corners, smaller nested card corners, rounded bar-chart tracks, and circular navigation buttons form the recurring geometry. Thin neutral borders define fields and nested cards; dashed dividers separate card metadata and chart gridlines. SVG supplies the logo, icons, donut, sparkline, and gauge; CSS supplies the bar marks. Upcoming-content cards and their detail views use locally stored demo portrait avatars. Reference and review images are documentation evidence only.
 
 ## Components
 
-- **Actions:** New content uses the deeper periwinkle fill, white text, and a plus icon. Calendar and Library use white secondary buttons; AI visibility is a small warm-gradient shortcut. Small panel actions use white rounded squares. Hover changes surface color. All native buttons, links, inputs, and selects use a visible 3px periwinkle outline with 3px offset; disabled paging controls reduce opacity.
-- **Header search:** A softly filled rectangular field shows a keyboard hint when empty and a clear button when populated. Command/Ctrl+K focuses it. Typing returns to home and filters the recent previews by title/keyword and the table by title/keyword/type. It is distinct from each operational section's own search.
-- **Navigation:** Desktop icon buttons expose tooltips; expanded rail labels replace them. The active destination is periwinkle. Mobile More reveals all labeled destinations. Selecting a destination closes expanded navigation, clears header search, resets the shared content filter, closes popovers, and scrolls to the top.
-- **Recent content:** Up to four matching records render as miniature paper previews with category tags, a wrapping 16px title, initial avatar, workspace name, and date. Each card opens the shared content detail dialog. The corner arrow opens the library. A paper sheet lifts 4px on hover; reduced-motion preference removes this movement.
-- **All content:** The fixed-layout table shows name, workspace, scheduled date, channel icons, status, and a detail action. It displays six records per page. Date scope offers All content, the fixed sample week of September 14–20, 2026, or Published. The filter panel adds a status selector and reset action. Empty results explain how to change the search or filters. Previous/next controls are bounded and include range and page labels.
-- **Activity and overview:** Three white activity cards link to content, social, and keyword views. The gauge records 100% setup, or 5/5 steps, and opens Settings. Its linked rows show 108 published assets, 132 tracked keywords, and 28 social post sets. The segmented arc is a setup illustration, not a measured breakdown of those unrelated counts.
-- **Library and social:** Grid is the default view, reusing the home’s `DocumentPreview` in upright white asset cards. Four quick-action cards and left document navigation establish the desktop hierarchy. List/grid views provide title-and-keyword search, type tabs, status filtering, date/title sorting, and topic collections. Social restricts the base records to social posts. Select-all targets visible rows. Bulk review updates selected unpublished records; published records retain their status. Default Export downloads visible filtered rows; selection Export includes selected records retained outside the current filter. Analytics summarize local preview records.
-- **Calendar:** A single white divided summary strip presents metrics without mini-charts. Month, Week, and Agenda share the records and type filter. Date navigation and Today change the period. Selecting a day updates its agenda; events open the content dialog. Add content prefills the selected date. Published month events retain full text opacity and an accessible check icon.
-- **Composer and dialog:** The shared native composer accepts title, type, status, date, time, and keyword. Calendar and keyword actions prefill their corresponding fields. Saving creates a session record. Detail close controls, Escape, and backdrop click dismiss the content dialog. Mark ready for review changes local state and produces a dismissible toast that clears after 3.5 seconds. Workspace popovers dismiss on outside pointerdown or Escape.
-- **Research:** Five historical source keywords support name search and a lower-difficulty filter, with keyword-to-composer actions. AI visibility retains the recorded baseline and source date, identifies unscored readiness, and requires a connected workspace for fresh scans. Research metrics use the same compact divided summary strip. AI visibility uses a white document report sheet instead of the retired ring illustration; operational gradient callouts and mini-charts are removed.
-- **Motion and data:** Buttons inherit short background, shadow, and color transitions; document paper motion uses a 200ms easing. Reduced-motion preference disables transitions and animations. Sample schedules are illustrative, source counts are historical snapshots, and edits reset on reload. No backend, live generation, or publishing is configured.
+- **Buttons:** Purple primary actions, outlined secondary actions, and circular paging controls. Hover changes surface color; focus-visible uses a 3px lavender outline with 4px offset. Disabled paging controls reduce opacity. Buttons transition background, shadow, and color over 180ms.
+- **Navigation:** Circular icon buttons expose tooltips on desktop hover and focus. The active destination is filled purple. On mobile, More reveals labeled destinations; selecting a destination closes the expanded menu and clears list filters.
+- **Metrics and charts:** Metric cards navigate to their relevant detail view. Week, Month, and Year replace the illustrative production series. Bar hover and keyboard focus reveal published/planned values. Distribution legend buttons toggle category emphasis and center text, expose pressed state, and dim the other segments.
+- **Content cards and lists:** Three-item paging advances one item at a time. Cards and list rows open the same native content-detail dialog. Library search matches title and keyword; type tabs and the status selector filter the list. The empty state offers Reset filters. Library Export downloads the visible filtered rows; the selection toolbar exports selected records, including selections retained outside the current filter.
+- **Fields and status:** Search uses a softly filled rounded field; the status selector uses a light border. Scheduled status uses green; draft and overdue states use warm amber. Labels accompany color.
+- **Dialog and feedback:** The dialog closes through its close controls, Escape, or backdrop click. Mark ready for review updates session state and produces a dismissible status toast that clears after 3.5 seconds. Workspace popovers dismiss on outside pointerdown or Escape. Settings and connections display source snapshots, with no live mutation implied.
+- **Motion:** Short color/opacity transitions and a small toast entrance are the complete motion vocabulary. Reduced-motion preference disables transitions and animations.
+
+### Section extension: content operations
+
+- **Library and social:** The shared section offers list/grid views, title-and-keyword search, article/social type tabs, status filtering, and date/title sorting. Social restricts its base records to social posts. Collections apply topic searches. Checkboxes select records; select-all targets the visible rows. Bulk review updates selected unpublished records to Ready for review; published records retain their status. Analytics summarize the local preview records rather than claiming live performance.
+- **Calendar:** Month, Week, and Agenda share the same records and article/social filter. Date navigation and Today update the displayed period. Selecting a day updates its agenda; selecting an event opens the existing content dialog. Add content carries the selected date into the shared composer. Month cells use a check SVG with an accessible Published label for completed items, keeping event text at full opacity rather than using faded text to convey completion.
+- **Shared composer:** Library, social, calendar, and keyword actions open a native dialog with title, type, status, date, time, and keyword fields. Calendar actions prefill the date; keyword actions prefill title and keyword. Saving creates a session record. This does not generate an article, publish content, or persist to a backend.
+- **Research:** Keyword opportunities retain the five historical source keywords, searchable names, and a lower-difficulty filter; creation actions hand the keyword to the composer. AI visibility presents the recorded baseline and source date, identifies unscored readiness, and makes clear that fresh scans require a connected workspace. Decorative mini-charts are not a performance history.
+- **Legibility:** Supporting text in the added sections uses darker slate and category-specific ink on pastel surfaces. The section muted variable is `--cs-muted` (`#626d7c`). Final library titles stay at 12px with 1.6 line height and metadata at 10px with 1.5 line height, including mobile; status text remains 10px and wraps. Calendar event titles retain the final 10px size. These final rules override earlier compact declarations.
+- **Data disclosure:** Added sample records and schedules are explicitly illustrative. Footers retain demo/illustrative and session-only labels; research distinguishes source snapshots from decorative graphics. Local edits reset on reload, and no backend or live publishing is configured.
 
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** preserve the user-selected Inkwise home composition and shell hierarchy.
-- **Do** use Uplift AI content and terminology within the selected visual reference.
-- **Do** preserve the reviewed action and status contrast and visible keyboard focus.
-- **Do** keep content at 16px, metadata and controls at 14px, section headings at 20px, and page titles at 32px desktop / 28px mobile.
-- **Do** keep wide tables and calendar grids inside their own scroll containers.
-- **Do** preserve the eight-node periwinkle ring and the single active Inkwise home.
-- **Do** keep operational CSS scoped to `.workspace-view` in `src/workspace.css`.
-- **Do** distinguish historical source counts, sample schedules, and session-only changes.
+- **Do** preserve the user-selected Clinexa screen's quiet palette and dashboard hierarchy.
+- **Do** retain readable card titles and metadata when adapting density.
+- **Do** pair interactive chart marks with keyboard focus behavior and textual values.
+- **Do** distinguish historical workspace snapshots, illustrative charts, and session-only changes.
 
 ### Don't:
 
-- **Don't** bring original Uplift AI website images or layouts into this dashboard.
-- **Don't** restore earlier arrow logos, contributor portraits, metric mini-charts, tilted document placeholders, or operational gradient callouts from other dashboards.
-- **Don't** import archived dashboards, stylesheets, or portrait assets into the app.
-- **Don't** use the decorative paper-preview microtype as a real content text scale.
-- **Don't** imply that local creation or review actions generate, publish, or persist content.
-
-## Appearance themes
-
-The header's sun/moon switch changes between light and dark without leaving the current view. Settings → Appearance also offers System. The choice is stored under `dashboard-2-theme` in browser local storage, synchronizes between tabs, and is applied before React loads to avoid a light flash. System follows the device while no explicit preference is saved.
-
-Dark mode preserves the Inkwise composition, ring mark, type roles, and scoped workspace boundary. `src/inkwise.css` owns the shared theme roles: charcoal canvas `#151820`, panel `#1e232e`, raised surface `#272d3a`, primary text `#e8ebf3`, supporting text `#b0b8cb`, and periwinkle action `#a7b3ff` with dark text `#171e38`. Success and review states use muted green and amber surfaces with lighter matching text. Document artwork, data colors, controls, native fields, scrollbars, selection, popovers, dialogs, and focus rings use the same roles. Operational rules stay inside `@scope (.workspace-view)` in `src/workspace.css`. Type sizes and layout do not change with the theme.
+- **Don't** import the original Uplift website's layout or imagery into this reference-led dashboard.
+- **Don't** replace SVG and CSS data graphics with raster approximations.
+- **Don't** treat the smallest auxiliary annotations as the default text scale for new components.
+- **Don't** imply that a preview interaction publishes content or changes a live connection.

@@ -28,7 +28,7 @@ import {
   CalendarClock,
   Layers3,
 } from "lucide-react";
-import { DocumentPreview } from "./InkwiseDashboard";
+import "./sections.css";
 
 const statuses = ["Published", "Scheduled", "Ready for review", "Draft"];
 const monthNames = [
@@ -71,16 +71,42 @@ function Status({ value }) {
     </span>
   );
 }
-export function Stat({ label, value, description }) {
+function MiniColumns({ values, color = "green" }) {
+  const max = Math.max(...values, 1);
   return (
-    <div className="cs-stat">
-      <span className="cs-stat-heading">{label}</span>
-      <strong className="cs-stat-number">{value}</strong>
-      <p>{description}</p>
+    <div className={`cs-mini-columns ${color}`} aria-hidden="true">
+      {values.map((n, i) => (
+        <i key={i} style={{ height: `${Math.max((n / max) * 100, 8)}%` }} />
+      ))}
     </div>
   );
 }
-
+export function Stat({
+  label,
+  value,
+  description,
+  icon: Icon,
+  color = "green",
+  values = [3, 5, 4, 7, 6, 8, 10],
+}) {
+  return (
+    <div className="cs-stat panel">
+      <div className="cs-stat-heading">
+        <span>{label}</span>
+        <span className={`cs-soft-icon ${color}`}>
+          <Icon size={17} />
+        </span>
+      </div>
+      <div className="cs-stat-value">
+        <div>
+          <strong>{value}</strong>
+          <p>{description}</p>
+        </div>
+        <MiniColumns values={values} color={color} />
+      </div>
+    </div>
+  );
+}
 function Empty({
   title = "No content found",
   description = "Try another search or reset your filters.",
@@ -195,7 +221,7 @@ export function ContentComposer({
             <X size={19} />
           </button>
         </div>
-        <h2 id="composer-title">New content</h2>
+        <h2 id="composer-title">Plan something worth finding.</h2>
         <p>Add an article or social post to your workspace.</p>
         <label>
           Content title
@@ -282,7 +308,7 @@ export function LibraryPage({
   const [tab, setTab] = useState("All content"),
     [status, setStatus] = useState("All statuses"),
     [query, setQuery] = useState(""),
-    [layout, setLayout] = useState("Grid"),
+    [layout, setLayout] = useState("List"),
     [sort, setSort] = useState("Newest first"),
     [selected, setSelected] = useState([]);
   const base = useMemo(
@@ -342,6 +368,11 @@ export function LibraryPage({
     <div className="cs-page">
       <div className="cs-page-intro">
         <div>
+          <h2>
+            {socialOnly
+              ? "A little more social. A lot more connected."
+              : "A home for every good idea."}
+          </h2>
           <p>
             {socialOnly
               ? "Review and organize your coordinated social content."
@@ -353,13 +384,40 @@ export function LibraryPage({
           New content
         </button>
       </div>
-      <section className="iw-library-actions" aria-label="Content actions">
-        <button onClick={() => onCreate()}><Plus /><span>New content<small>Start a document</small></span><ArrowUpRight size={18} /></button>
-        <button onClick={onCalendar}><CalendarDays /><span>Calendar<small>Plan your publishing</small></span><ArrowUpRight size={18} /></button>
-        <button onClick={() => { setStatus("Draft"); setTab("All content"); }}><PenLine /><span>Drafts<small>{counts.Draft} to continue</small></span><ArrowUpRight size={18} /></button>
-        <button onClick={() => { setStatus("Published"); setTab("All content"); }}><Globe2 /><span>Published<small>{counts.Published} documents</small></span><ArrowUpRight size={18} /></button>
+      <section className="cs-stats" aria-label="Content library analytics">
+        <Stat
+          label={socialOnly ? "Social content" : "Library content"}
+          value={base.length}
+          description="Items in this preview"
+          icon={Layers3}
+          color="purple"
+          values={[articleCount, base.length - articleCount]}
+        />
+        <Stat
+          label="Published"
+          value={counts.Published}
+          description="Ready for the world"
+          icon={Globe2}
+          values={statuses.map((s) => counts[s])}
+        />
+        <Stat
+          label="In review"
+          value={counts["Ready for review"]}
+          description="A fresh pair of eyes needed"
+          icon={FileText}
+          color="gold"
+          values={[counts.Draft, counts["Ready for review"]]}
+        />
+        <Stat
+          label="Scheduled"
+          value={counts.Scheduled}
+          description="Next up in your calendar"
+          icon={CalendarClock}
+          color="blue"
+          values={[counts.Published, counts.Scheduled]}
+        />
       </section>
-      <div className="cs-library-layout iw-library-layout">
+      <div className="cs-library-layout">
         <section className="cs-library panel">
           <div className="cs-library-header">
             <div className="cs-tabs" aria-label="Content type">
@@ -584,13 +642,27 @@ export function LibraryPage({
             </div>
           ) : (
             <div className="cs-asset-grid">
-              {filtered.map((item, index) => (
+              {filtered.map((item) => (
                 <button
                   className="cs-asset-card"
                   key={item.id}
                   onClick={() => onOpen(item)}
                 >
-                  <DocumentPreview item={item} variant={index % 4} />
+                  <div
+                    className={`cs-document-preview ${item.type === "Social post" ? "green" : item.tone}`}
+                  >
+                    <span className="cs-preview-paper">
+                      <TypeIcon type={item.type} size={19} />
+                      <b>{item.title}</b>
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                    <span className="cs-preview-type">
+                      <TypeIcon type={item.type} size={12} />
+                      {item.type}
+                    </span>
+                  </div>
                   <div className="cs-asset-info">
                     <Status value={item.status} />
                     <h3>{item.title}</h3>
@@ -616,8 +688,27 @@ export function LibraryPage({
         <aside className="cs-library-aside">
           <section className="panel cs-breakdown">
             <div className="cs-section-heading">
-              <h3>Documents</h3>
+              <h3>Content at a glance</h3>
               <Layers3 size={16} />
+            </div>
+            <div className="cs-breakdown-number">
+              <strong>{base.length}</strong>
+              <span>ideas taking shape</span>
+            </div>
+            <div
+              className="cs-stacked-bar"
+              aria-label={`${articleCount} articles, ${base.length - articleCount} social posts`}
+            >
+              <span
+                style={{
+                  width: `${(articleCount / Math.max(base.length, 1)) * 100}%`,
+                }}
+              />
+              <span
+                style={{
+                  width: `${((base.length - articleCount) / Math.max(base.length, 1)) * 100}%`,
+                }}
+              />
             </div>
             <button
               className="cs-breakdown-row"
@@ -703,7 +794,16 @@ export function LibraryPage({
               </button>
             ))}
           </section>
-
+          <button className="cs-calendar-link" onClick={onCalendar}>
+            <span className="cs-soft-icon purple">
+              <CalendarDays size={20} />
+            </span>
+            <h3>Make room for your next idea.</h3>
+            <p>See what’s coming up and plan your next content batch.</p>
+            <span>
+              Open calendar <ArrowUpRight size={15} />
+            </span>
+          </button>
         </aside>
       </div>
       <div className="cs-page-footer">
@@ -794,7 +894,8 @@ export function CalendarPage({ items, onOpen, onCreate }) {
     <div className="cs-page">
       <div className="cs-page-intro">
         <div>
-          <p>Schedule and review your articles and social posts.</p>
+          <h2>A clear view of what’s next.</h2>
+          <p>Give every article and social post its moment.</p>
         </div>
         <button
           className="cs-button filled"
@@ -827,7 +928,7 @@ export function CalendarPage({ items, onOpen, onCreate }) {
         <Stat
           label="Awaiting review"
           value={counts["Ready for review"]}
-          description="Content waiting for review"
+          description="A little polish before publishing"
           icon={PenLine}
           color="gold"
           values={[counts.Draft, counts["Ready for review"]]}
@@ -835,7 +936,7 @@ export function CalendarPage({ items, onOpen, onCreate }) {
         <Stat
           label="Published this month"
           value={counts.Published}
-          description="Published in the selected month"
+          description="Content that’s already out there"
           icon={CircleCheck}
           color="blue"
           values={weekTotals}
@@ -1152,6 +1253,48 @@ export function CalendarPage({ items, onOpen, onCreate }) {
               Add content to this day
             </button>
           </section>
+          <section className="panel cs-week-pulse">
+            <div className="cs-section-heading">
+              <h3>This week’s rhythm</h3>
+              <span className="cs-soft-icon green">
+                <TrendingIcon />
+              </span>
+            </div>
+            <p>
+              <strong>{weekTotals.reduce((a, b) => a + b, 0)}</strong> planned
+              pieces
+            </p>
+            <div className="cs-week-bars">
+              {weekTotals.map((n, i) => (
+                <div key={i}>
+                  <div>
+                    <span
+                      style={{
+                        height: `${(n / Math.max(...weekTotals, 1)) * 100}%`,
+                      }}
+                    />
+                  </div>
+                  <span>{dayNames[i][0]}</span>
+                </div>
+              ))}
+            </div>
+            <div className="cs-pulse-note">
+              Week of{" "}
+              {weekDays[0].toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })}{" "}
+              · all statuses
+            </div>
+          </section>
+          <div className="cs-calendar-tip">
+            <Sparkles size={18} />
+            <p>
+              A consistent rhythm starts with a plan.
+              <br />
+              <span>Your next idea has a place here.</span>
+            </p>
+          </div>
         </aside>
       </div>
       <div className="cs-page-footer">
@@ -1162,5 +1305,19 @@ export function CalendarPage({ items, onOpen, onCreate }) {
         <span>Illustrative schedule · Session-only changes</span>
       </div>
     </div>
+  );
+}
+function TrendingIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="m3 17 6-6 4 4 8-10M15 5h6v6" />
+    </svg>
   );
 }

@@ -2,6 +2,3 @@
 .impeccable
 node_modules
 dist
-.vercel
-.env*
-panze
