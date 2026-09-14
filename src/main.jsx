@@ -29,6 +29,8 @@ import {
   Link2,
   TrendingUp,
   MoreHorizontal,
+  Moon,
+  Sun,
 } from "lucide-react";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
@@ -40,6 +42,8 @@ import { KeywordPage, VisibilityPage } from "./ResearchSections";
 
 import "./desktop-typography.css";
 import "./mobile-layout.css";
+import "./theme.css";
+import { useAppearance } from "./appearance";
 
 const content = [
   {
@@ -132,11 +136,11 @@ const navItems = [
   { name: "Connections", icon: Link2 },
 ];
 const mixes = [
-  { name: "SEO articles", value: 40, color: "#b8b7f4" },
-  { name: "Social posts", value: 28, color: "#b4dca4" },
-  { name: "Content briefs", value: 16, color: "#95cdf7" },
-  { name: "Google Business", value: 10, color: "#f7d494" },
-  { name: "Other content", value: 6, color: "#e7ebef" },
+  { name: "SEO articles", value: 40, color: "var(--d2-chart-purple, #b8b7f4)" },
+  { name: "Social posts", value: 28, color: "var(--d2-chart-green, #b4dca4)" },
+  { name: "Content briefs", value: 16, color: "var(--d2-chart-blue, #95cdf7)" },
+  { name: "Google Business", value: 10, color: "var(--d2-chart-gold, #f7d494)" },
+  { name: "Other content", value: 6, color: "var(--d2-chart-neutral, #e7ebef)" },
 ];
 const chartSets = {
   Month: {
@@ -218,8 +222,8 @@ function Sparkline() {
     <svg className="sparkline" viewBox="0 0 120 80" aria-hidden="true">
       <defs>
         <linearGradient id="sparkFill" x1="0" x2="0" y1="0" y2="1">
-          <stop stopColor="#c7c5f9" stopOpacity=".65" />
-          <stop offset="1" stopColor="#c7c5f9" stopOpacity="0" />
+          <stop stopColor="var(--d2-chart-purple, #c7c5f9)" stopOpacity=".65" />
+          <stop offset="1" stopColor="var(--d2-chart-purple, #c7c5f9)" stopOpacity="0" />
         </linearGradient>
       </defs>
       <path
@@ -229,11 +233,11 @@ function Sparkline() {
       <path
         d="M2 68 9 64 14 53 23 57 31 47 39 50 48 41 56 46 65 16 72 12 79 42 87 37 96 53 104 44 110 48 118 36"
         fill="none"
-        stroke="#c2bff3"
+        stroke="var(--d2-chart-purple, #c2bff3)"
         strokeWidth="2"
         strokeLinejoin="round"
       />
-      <circle cx="79" cy="42" r="3" fill="white" stroke="#b8b3ec" />
+      <circle cx="79" cy="42" r="3" fill="var(--d2-surface, white)" stroke="var(--d2-chart-purple, #b8b3ec)" />
     </svg>
   );
 }
@@ -245,7 +249,7 @@ function Gauge() {
           d="M10 68a53 53 0 0 1 106 0"
           pathLength="100"
           fill="none"
-          stroke="#edf0f2"
+          stroke="var(--d2-track, #edf0f2)"
           strokeWidth="13"
           strokeLinecap="round"
         />
@@ -253,14 +257,14 @@ function Gauge() {
           d="M10 68a53 53 0 0 1 106 0"
           pathLength="100"
           fill="none"
-          stroke="#c6c4f6"
+          stroke="var(--d2-chart-purple, #c6c4f6)"
           strokeWidth="13"
           strokeLinecap="round"
         />
         <path
           d="M25 68a38 38 0 0 1 76 0"
           fill="none"
-          stroke="#dfe2ed"
+          stroke="var(--d2-line, #dfe2ed)"
           strokeDasharray="1 5"
           strokeWidth="2"
         />
@@ -308,6 +312,7 @@ function ContentAvatar({ item }) {
 }
 
 function App() {
+  const { preference, dark, setPreference } = useAppearance();
   const [mobileMenu, setMobileMenu] = useState(false),
     [view, setView] = useState("Dashboard"),
     [period, setPeriod] = useState("Month"),
@@ -449,6 +454,16 @@ function App() {
           </div>
           <div className="header-actions" ref={popRef}>
             <span className="demo-badge">Demo workspace</span>
+            <button
+              className="appearance-toggle"
+              role="switch"
+              aria-label="Dark mode"
+              aria-checked={dark}
+              title={dark ? "Switch to light mode" : "Switch to dark mode"}
+              onClick={() => setPreference(dark ? "light" : "dark")}
+            >
+              {dark ? <Sun size={19} aria-hidden="true" /> : <Moon size={19} aria-hidden="true" />}
+            </button>
             <button
               className="workspace-switch"
               aria-expanded={popover === "workspace"}
@@ -701,7 +716,7 @@ function App() {
                       cy="150"
                       r="63"
                       fill="none"
-                      stroke="#dce1e9"
+                      stroke="var(--d2-line, #dce1e9)"
                       strokeWidth="1.5"
                       strokeDasharray="1 7"
                     />
@@ -812,6 +827,17 @@ function App() {
                 <p>Your LunchLink workspace is ready.</p>
               </div>
               <span className="status-pill">5 of 5 complete</span>
+            </div>
+            <div className="appearance-setting">
+              <div>
+                <label htmlFor="appearance">Appearance</label>
+                <p>Choose a theme or match your device settings.</p>
+              </div>
+              <select id="appearance" value={preference} onChange={(event) => setPreference(event.target.value)}>
+                <option value="system">System</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
             </div>
             {[
               "Business profile",

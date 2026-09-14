@@ -274,14 +274,14 @@ export function VisibilityPage({ onKeywords }) {
               <path
                 d="M37 176a105 105 0 1 1 186 0"
                 fill="none"
-                stroke="#eeecf6"
+                stroke="var(--d2-track, #eeecf6)"
                 strokeWidth="24"
                 strokeLinecap="round"
               />
               <path
                 d="M37 176a105 105 0 1 1 186 0"
                 fill="none"
-                stroke="#b5ade7"
+                stroke="var(--d2-chart-purple, #b5ade7)"
                 strokeWidth="24"
                 strokeLinecap="round"
                 pathLength="100"
@@ -290,7 +290,7 @@ export function VisibilityPage({ onKeywords }) {
               <path
                 d="M58 164a81 81 0 1 1 144 0"
                 fill="none"
-                stroke="#e1deef"
+                stroke="var(--d2-line, #e1deef)"
                 strokeWidth="2"
                 strokeDasharray="1 6"
               />

@@ -1,0 +1,106 @@
+/* Light appearance uses the original Clinexa colors at each token's fallback. */
+:root {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --d2-text: #eceef6;
+  --d2-muted: #b6bdcd;
+  --d2-on-primary: #24213e;
+  --d2-surface: #242835;
+  --d2-surface-muted: #2c3140;
+  --d2-line: #3e4457;
+  --d2-focus: #c2baff;
+  --d2-shadow: #090c1633;
+  --d2-backdrop: #090d1bbd;
+  --d2-tooltip: #dedbf4;
+  --d2-primary: #b4adef;
+  --d2-primary-hover: #c6c0ff;
+  --d2-green-ink: #b8dba7;
+  --d2-gold-ink: #e7cc97;
+  --d2-blue-ink: #afd3f0;
+  --d2-purple-ink: #c8c2f5;
+  --d2-green-soft: #2c3c34;
+  --d2-gold-soft: #40382d;
+  --d2-blue-soft: #29394b;
+  --d2-purple-soft: #35334d;
+  --d2-track: #404657;
+  --d2-chart-green: #a5cd91;
+  --d2-chart-gold: #dec28b;
+  --d2-chart-blue: #91bfdf;
+  --d2-chart-purple: #aba3e8;
+  --d2-chart-rose: #d99aab;
+  --d2-chart-neutral: #778397;
+  --d2-chart-planned: #687388;
+  --ink: var(--d2-text);
+  --muted: var(--d2-muted);
+  --purple: var(--d2-purple-ink);
+  --green: var(--d2-chart-green);
+  --panel: var(--d2-surface);
+  --line: var(--d2-line);
+  --canvas: linear-gradient(115deg, #1d1f30 0%, #191d28 58%, #1b2529 100%);
+  background: #191c27;
+}
+
+.appearance-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 50%;
+  background: var(--d2-surface, #ffffffb8);
+  color: var(--d2-purple-ink, #6363ac);
+}
+.appearance-toggle:hover {
+  background: var(--d2-purple-soft, #e9e8f9);
+}
+.appearance-setting {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--line);
+}
+.appearance-setting label {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+}
+.appearance-setting p {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--d2-muted, #626d7c);
+}
+.appearance-setting select {
+  min-height: 44px;
+  max-width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--d2-surface-muted, #f6f7fb);
+  color: var(--ink);
+  font-size: 14px;
+}
+textarea:focus-visible {
+  outline: 3px solid var(--d2-focus, #7d7ccd);
+  outline-offset: 4px;
+}
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder {
+  color: var(--d2-muted);
+  opacity: 1;
+}
+:root[data-theme="dark"] input[type="checkbox"] {
+  accent-color: var(--d2-primary);
+}
+@media (max-width: 560px) {
+  .header-actions { gap: 10px; }
+  .appearance-setting { align-items: flex-start; flex-wrap: wrap; gap: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0s !important; }
+}

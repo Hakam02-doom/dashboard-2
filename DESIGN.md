@@ -169,6 +169,14 @@ Large soft panel corners, smaller nested card corners, rounded bar-chart tracks,
 
 ## Do's and Don'ts
 
+### Appearance: light, dark, and system
+
+Dashboard 2 has its own appearance state (`uplift-dashboard-2-appearance`). The header's 44px sun/moon switch toggles the resolved theme. Settings → Appearance offers Light, Dark, and System; System follows device changes. Selection persists across reloads and synchronizes across tabs. If browser storage is unavailable, the current session still supports theme changes. The document initializes its theme before React mounts to avoid a bright first frame.
+
+`src/theme.css` defines the dark semantic palette: charcoal surfaces, soft white primary text, slate supporting text, lavender actions, and distinct green, lavender, blue, and amber chart colors. Existing CSS and SVG graphics consume `--d2-*` roles with original light values as fallbacks. Native inputs, placeholders, borders, focus rings, dialogs, tooltips, status chips, charts, and mobile navigation all adapt. Preserve existing typography, layout, and unfiltered portrait assets. Planned production uses a dedicated slate chart token so it remains visible against dark panels.
+
+Dark-mode review on September 14, 2026 covered the home, all operational sections, library list/grid, composer, calendar events, settings, and 390px mobile layouts. Rendered text checks found no contrast failures in the sampled states; the inspected mobile pages had no horizontal page overflow. Light/dark switching, System selection, and reload persistence passed. The production build and five project-isolation tests passed. Deployment targets the isolated Dashboard 2 repository and Vercel project through the project identity guards.
+
 ### Do:
 
 - **Do** preserve the user-selected Clinexa screen's quiet palette and dashboard hierarchy.

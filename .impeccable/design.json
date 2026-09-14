@@ -300,6 +300,47 @@
         "research": "Five source keywords with search/lower-difficulty filter; AI baseline and source date; readiness unscored; fresh scans require connected workspace."
       },
       "dataContract": "Added sample records and schedules are illustrative. Research snapshots are historical. Decorative mini-charts are not performance history. No backend, persistence, content generation, or live publishing is configured."
+    },
+    "appearance": {
+      "source": "src/theme.css",
+      "preferences": [
+        "system",
+        "light",
+        "dark"
+      ],
+      "default": "system",
+      "storageKey": "uplift-dashboard-2-appearance",
+      "darkTokens": {
+        "--d2-text": "#eceef6",
+        "--d2-muted": "#b6bdcd",
+        "--d2-on-primary": "#24213e",
+        "--d2-surface": "#242835",
+        "--d2-surface-muted": "#2c3140",
+        "--d2-line": "#3e4457",
+        "--d2-focus": "#c2baff",
+        "--d2-shadow": "#090c1633",
+        "--d2-backdrop": "#090d1bbd",
+        "--d2-tooltip": "#dedbf4",
+        "--d2-primary": "#b4adef",
+        "--d2-primary-hover": "#c6c0ff",
+        "--d2-green-ink": "#b8dba7",
+        "--d2-gold-ink": "#e7cc97",
+        "--d2-blue-ink": "#afd3f0",
+        "--d2-purple-ink": "#c8c2f5",
+        "--d2-green-soft": "#2c3c34",
+        "--d2-gold-soft": "#40382d",
+        "--d2-blue-soft": "#29394b",
+        "--d2-purple-soft": "#35334d",
+        "--d2-track": "#404657",
+        "--d2-chart-green": "#a5cd91",
+        "--d2-chart-gold": "#dec28b",
+        "--d2-chart-blue": "#91bfdf",
+        "--d2-chart-purple": "#aba3e8",
+        "--d2-chart-rose": "#d99aab",
+        "--d2-chart-neutral": "#778397",
+        "--d2-chart-planned": "#687388"
+      },
+      "lightValues": "Original per-component CSS fallbacks; layout and typography unchanged."
     }
   },
   "components": [
@@ -332,7 +373,7 @@
       "kind": "input",
       "refersTo": "input-search",
       "description": "Search title and type in the list view.",
-      "html": "<label class=\"ds-search\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input aria-label=\"Search content\" placeholder=\"Search content\u2026\"></label>",
+      "html": "<label class=\"ds-search\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input aria-label=\"Search content\" placeholder=\"Search content…\"></label>",
       "css": ".ds-search{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:flex;align-items:center;gap:10px;background:#f1f3f7;padding:10px 15px;border-radius:10px;color:#8990a1;max-width:380px}.ds-search input{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;border:0;background:transparent;min-width:0;flex:1;font-size:12px;color:var(--ink,#282c36);caret-color:var(--purple,#6363ac)}.ds-search input::placeholder{color:#70788b}.ds-search input:focus-visible{outline:3px solid #7d7ccd;outline-offset:6px} @media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
     },
     {
@@ -356,7 +397,7 @@
       "kind": "card",
       "refersTo": "content-card",
       "description": "Opens the content dialog; readable title and wrapping metadata reflect the final review fix.",
-      "html": "<button class=\"ds-card\"><h3>Allergen labeling best practices</h3><p>SEO article</p><div class=\"ds-meta\"><span>Sep 14, 2026, 08:00 AM</span><span>LunchLink \u00b7 Scheduled</span></div></button>",
+      "html": "<button class=\"ds-card\"><h3>Allergen labeling best practices</h3><p>SEO article</p><div class=\"ds-meta\"><span>Sep 14, 2026, 08:00 AM</span><span>LunchLink · Scheduled</span></div></button>",
       "css": ".ds-card{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;transition:background .18s ease,box-shadow .18s ease,color .18s ease;width:270px;text-align:left;border:1px solid #edf0f3;border-radius:16px;padding:13px 11px;background:transparent;color:var(--ink,#282c36);cursor:pointer}.ds-card:hover{background:#fff;border-color:#dddfef}.ds-card:focus-visible{outline:3px solid #7d7ccd;outline-offset:4px}.ds-card h3{margin:0;font-size:12px;line-height:1.45;letter-spacing:-.25px;font-weight:500;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.ds-card p{margin:3px 0 0;font-size:10px;color:#68717e}.ds-meta{border-top:1px dashed #e1e6ed;margin-top:12px;padding-top:11px;display:flex;flex-direction:column;gap:8px;color:#68717e;font-size:10px;line-height:1.5} @media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
     },
     {

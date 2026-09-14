@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#edf0f8" />
+    <script>
+      (() => {
+        let preference = "system";
+        try { preference = localStorage.getItem("uplift-dashboard-2-appearance") || "system"; } catch {}
+        const dark = preference === "dark" ||
+          (preference !== "light" && preference !== "dark" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+        document.documentElement.style.colorScheme = dark ? "dark" : "light";
+        document.querySelector('meta[name="theme-color"]').content = dark ? "#191c27" : "#edf0f8";
+      })();
+    </script>
     <meta
       name="description"
       content="Uplift AI — your content, search visibility, and publishing in one workspace."
