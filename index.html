@@ -3,19 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#edf0f8" />
+    <meta name="theme-color" content="#eff1f6" />
+    <script>
+      (() => {
+        let preference;
+        try { preference = localStorage.getItem("dashboard-2-theme"); } catch {}
+        const dark = preference === "dark" || (preference !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+        document.querySelector('meta[name="theme-color"]').content = dark ? "#151820" : "#eff1f6";
+      })();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta
       name="description"
       content="Uplift AI — your content, search visibility, and publishing in one workspace."
     />
-    <title>Dashboard 2 · Uplift AI</title>
+    <title>Uplift AI · Content Workspace</title>
   </head>
   <body>
-    <!-- THESIS: Uplift's daily operating view faithfully follows the user-selected Clinexa dashboard.
-OWN-WORLD: Cool pale lavender-to-mint canvas, soft white panels, compact Inter typography, purple icon rail, pastel green charts.
-STORY: Scan content production, review the publishing mix, then open the next scheduled article.
-FIRST VIEWPORT: Slim icon rail; heading and workspace selector; four equal metrics; two-thirds-width bar chart and upcoming content; one-third-width distribution panel.
-FORM: User-pinned Clinexa laptop-screen reference; no concept roll or alternate visual world overrides the explicit reproduction request.
+    <!-- THESIS: Reproduce the user-selected Inkwise dashboard with Uplift AI content.
+OWN-WORLD: Cool gray canvas, near-white panels, periwinkle icon rail and readable Inter type.
+STORY: Find and review content, inspect workspace activity, then plan the next article.
+FIRST VIEWPORT: Search, greeting and toolbar; four document previews and content table left; activity and semicircular setup gauge right.
+FORM: User-pinned Inkwise cover, 27222028. One home implementation, isolated from archived designs.
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance -->
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>

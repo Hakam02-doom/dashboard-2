@@ -1,6 +1,6 @@
-# Dashboard 2
+# Uplift AI · Content Workspace
 
-Interactive React/Vite implementation of the dashboard inside the user-selected [Clinexa reference](https://dribbble.com/shots/26892320-Healthcare-CRM-Dashboard-UI-Clinexa), adapted to Uplift AI content.
+React/Vite dashboard following the user-selected [Inkwise reference](https://dribbble.com/shots/27222028-UI-UX-Design-Document-Editor-Dashboard-Inkwise), populated with Uplift AI/LunchLink content.
 
 ## Run
 
@@ -9,24 +9,30 @@ npm install
 npm run dev
 ```
 
-Open the localhost URL printed by Vite. `npm run build` creates the production bundle in `dist`; `npm run preview` serves it.
+Open the localhost URL printed by Vite. `npm run build` creates `dist`; `npm run preview` serves that build.
 
-## Included
+## Design and implementation
 
-- Reference-matched desktop composition, pastel charts, icon navigation, and compact metric cards.
-- Responsive dashboard and mobile navigation.
-- Weekly/monthly/yearly chart periods, accessible bar tooltips, interactive distribution legend.
-- Upcoming-content carousel and detail dialog, local review-status changes.
-- Content search, status filters, CSV export, source-backed workspace views.
+- `src/InkwiseDashboard.jsx` is the single home dashboard: recent documents, content table, activity feed, and semicircular workspace overview.
+- `src/inkwise.css` owns the shell and home. `src/typography.css` defines readable type roles: 16px content, 14px metadata and controls, 20px section headings, and 28–32px page titles.
+- `src/workspace.css` styles the library, social content, calendar, research, settings, connections, notifications, and dialogs inside `.workspace-view` boundaries.
+- The periwinkle ring mark, document previews, white controls, and cool gray panels follow the selected design. The library shares the home document-preview component.
+- Previous dashboard code and styles are preserved in `.impeccable/archive/` and are not imported. Do not reconnect them; follow `AGENTS.md`.
 
-## Data
+## Features
 
-Content names, Uplift terminology, and headline counts come from previously captured Uplift AI/LunchLink workspace text. Historical source data is not refreshed automatically. Monthly chart series, content distribution, and demonstration scheduling states are illustrative. The app labels itself as a demo workspace. Changes persist only during the current session. This project has no backend, authentication, publishing API, or external mutations.
+Content search, date/status filters, pagination, list/grid library layouts, collections, sorting, bulk review, CSV export, and a shared content composer. The calendar supports month/week/agenda views and day selection. Keyword research supports search, difficulty filtering, and topic-prefilled planning. AI visibility, settings, and connections display source snapshots.
 
-No images or layouts from Uplift's original website are used. The Clinexa reference is stored only in `.impeccable/references` for review and is not shipped in the app. Icons are Lucide and an authored Uplift-style mark. Inter is self-hosted from Fontsource. Upcoming-content portraits are locally stored demo avatars from Random User; their sources are recorded in `public/avatars/SOURCES.md`.
+## Data and assets
 
-## Expanded workspace sections
+Content names and terminology come from captured Uplift AI/LunchLink workspace text. The 18 initial records include illustrative additions and schedules. Library/calendar counts derive from those local records. Research figures and headline workspace metrics are historical snapshots. Changes last for the browser session; this preview has no backend or live publishing integration.
 
-The calendar now includes month, week, and agenda views; day selection; content-type filters; and a daily schedule. The library and social workspace include list/grid layouts, collections, status filters, sorting, selection, visible/selected CSV export, and local bulk review. A shared composer adds records across calendar and library. Keyword research includes difficulty filtering and topic-prefilled planning; AI visibility includes the captured baseline and sample monitored questions.
+No original Uplift website images or layouts are used. Inter is self-hosted; icons are Lucide. Miniature document artwork is generated from local content using HTML/CSS and is hidden from assistive technology; its tiny print is illustration, not interface text.
 
-The 18 initial preview records include illustrative additions based on the source topic names. Library/calendar analytics count these records. The original dashboard headline metrics and research baselines remain historical source snapshots.
+## Validation
+
+Production build and browser checks cover home, library search and layouts, calendar modes, research, settings, and dialogs. Desktop, the user's 934px viewport, and 390px mobile layouts were inspected. Dense tables and calendars scroll within their panels. Latest evidence is in `.impeccable/review/`; see `current-finish-review.md` for the current review.
+
+## Dark mode
+
+Use the sun/moon switch beside notifications to compare themes. Settings → Appearance provides Light, Dark, and System. Theme choice persists in this browser and syncs across tabs; content edits remain session-only. The initial theme follows the system and is applied before the first render. Theme tokens live in `src/inkwise.css`, with operational components still scoped in `src/workspace.css`.

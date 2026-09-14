@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-14T07:45:14.716049+00:00",
+  "generatedAt": "2026-09-14T08:59:40.244519+00:00",
   "title": "Design System: Uplift AI Dashboard",
   "extensions": {
     "colorMeta": {
@@ -8,56 +8,112 @@
         "role": "neutral",
         "displayName": "Ink",
         "tonalRamp": [
-          "oklch(15% 0.0191 268.03)",
-          "oklch(26% 0.0191 268.03)",
-          "oklch(38% 0.0191 268.03)",
-          "oklch(49% 0.0191 268.03)",
-          "oklch(61% 0.0191 268.03)",
-          "oklch(72% 0.0191 268.03)",
-          "oklch(84% 0.0191 268.03)",
-          "oklch(95% 0.0191 268.03)"
+          "oklch(15% 0.0090 276.85)",
+          "oklch(26% 0.0090 276.85)",
+          "oklch(38% 0.0090 276.85)",
+          "oklch(49% 0.0090 276.85)",
+          "oklch(61% 0.0090 276.85)",
+          "oklch(72% 0.0090 276.85)",
+          "oklch(84% 0.0090 276.85)",
+          "oklch(95% 0.0090 276.85)"
         ]
       },
       "supporting": {
         "role": "neutral",
         "displayName": "Supporting",
         "tonalRamp": [
-          "oklch(15% 0.0230 257.51)",
-          "oklch(26% 0.0230 257.51)",
-          "oklch(38% 0.0230 257.51)",
-          "oklch(49% 0.0230 257.51)",
-          "oklch(61% 0.0230 257.51)",
-          "oklch(72% 0.0230 257.51)",
-          "oklch(84% 0.0230 257.51)",
-          "oklch(95% 0.0230 257.51)"
+          "oklch(15% 0.0244 268.24)",
+          "oklch(26% 0.0244 268.24)",
+          "oklch(38% 0.0244 268.24)",
+          "oklch(49% 0.0244 268.24)",
+          "oklch(61% 0.0244 268.24)",
+          "oklch(72% 0.0244 268.24)",
+          "oklch(84% 0.0244 268.24)",
+          "oklch(95% 0.0244 268.24)"
         ]
       },
       "purple": {
         "role": "primary",
         "displayName": "Purple",
         "tonalRamp": [
-          "oklch(15% 0.1129 281.88)",
-          "oklch(26% 0.1129 281.88)",
-          "oklch(38% 0.1129 281.88)",
-          "oklch(49% 0.1129 281.88)",
-          "oklch(61% 0.1129 281.88)",
-          "oklch(72% 0.1129 281.88)",
-          "oklch(84% 0.1129 281.88)",
-          "oklch(95% 0.1129 281.88)"
+          "oklch(15% 0.1484 274.19)",
+          "oklch(26% 0.1484 274.19)",
+          "oklch(38% 0.1484 274.19)",
+          "oklch(49% 0.1484 274.19)",
+          "oklch(61% 0.1484 274.19)",
+          "oklch(72% 0.1484 274.19)",
+          "oklch(84% 0.1484 274.19)",
+          "oklch(95% 0.1484 274.19)"
+        ]
+      },
+      "primary-action": {
+        "role": "primary",
+        "displayName": "Primary Action",
+        "tonalRamp": [
+          "oklch(15% 0.1386 272.99)",
+          "oklch(26% 0.1386 272.99)",
+          "oklch(38% 0.1386 272.99)",
+          "oklch(49% 0.1386 272.99)",
+          "oklch(61% 0.1386 272.99)",
+          "oklch(72% 0.1386 272.99)",
+          "oklch(84% 0.1386 272.99)",
+          "oklch(95% 0.1386 272.99)"
+        ]
+      },
+      "primary-hover": {
+        "role": "primary",
+        "displayName": "Primary Hover",
+        "tonalRamp": [
+          "oklch(15% 0.1379 272.38)",
+          "oklch(26% 0.1379 272.38)",
+          "oklch(38% 0.1379 272.38)",
+          "oklch(49% 0.1379 272.38)",
+          "oklch(61% 0.1379 272.38)",
+          "oklch(72% 0.1379 272.38)",
+          "oklch(84% 0.1379 272.38)",
+          "oklch(95% 0.1379 272.38)"
+        ]
+      },
+      "navigation": {
+        "role": "primary",
+        "displayName": "Navigation",
+        "tonalRamp": [
+          "oklch(15% 0.1438 274.19)",
+          "oklch(26% 0.1438 274.19)",
+          "oklch(38% 0.1438 274.19)",
+          "oklch(49% 0.1438 274.19)",
+          "oklch(61% 0.1438 274.19)",
+          "oklch(72% 0.1438 274.19)",
+          "oklch(84% 0.1438 274.19)",
+          "oklch(95% 0.1438 274.19)"
+        ]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Canvas",
+        "tonalRamp": [
+          "oklch(15% 0.0070 268.55)",
+          "oklch(26% 0.0070 268.55)",
+          "oklch(38% 0.0070 268.55)",
+          "oklch(49% 0.0070 268.55)",
+          "oklch(61% 0.0070 268.55)",
+          "oklch(72% 0.0070 268.55)",
+          "oklch(84% 0.0070 268.55)",
+          "oklch(95% 0.0070 268.55)"
         ]
       },
       "panel": {
         "role": "neutral",
         "displayName": "Panel",
         "tonalRamp": [
-          "oklch(15% 0 0)",
-          "oklch(26% 0 0)",
-          "oklch(38% 0 0)",
-          "oklch(49% 0 0)",
-          "oklch(61% 0 0)",
-          "oklch(72% 0 0)",
-          "oklch(84% 0 0)",
-          "oklch(95% 0 0)"
+          "oklch(15% 0.0041 271.37)",
+          "oklch(26% 0.0041 271.37)",
+          "oklch(38% 0.0041 271.37)",
+          "oklch(49% 0.0041 271.37)",
+          "oklch(61% 0.0041 271.37)",
+          "oklch(72% 0.0041 271.37)",
+          "oklch(84% 0.0041 271.37)",
+          "oklch(95% 0.0041 271.37)"
         ]
       },
       "white": {
@@ -78,199 +134,291 @@
         "role": "neutral",
         "displayName": "Line",
         "tonalRamp": [
-          "oklch(15% 0.0080 253.85)",
-          "oklch(26% 0.0080 253.85)",
-          "oklch(38% 0.0080 253.85)",
-          "oklch(49% 0.0080 253.85)",
-          "oklch(61% 0.0080 253.85)",
-          "oklch(72% 0.0080 253.85)",
-          "oklch(84% 0.0080 253.85)",
-          "oklch(95% 0.0080 253.85)"
+          "oklch(15% 0.0070 268.55)",
+          "oklch(26% 0.0070 268.55)",
+          "oklch(38% 0.0070 268.55)",
+          "oklch(49% 0.0070 268.55)",
+          "oklch(61% 0.0070 268.55)",
+          "oklch(72% 0.0070 268.55)",
+          "oklch(84% 0.0070 268.55)",
+          "oklch(95% 0.0070 268.55)"
         ]
       },
-      "green": {
-        "role": "secondary",
-        "displayName": "Green",
+      "search": {
+        "role": "neutral",
+        "displayName": "Search",
         "tonalRamp": [
-          "oklch(15% 0.0839 137.11)",
-          "oklch(26% 0.0839 137.11)",
-          "oklch(38% 0.0839 137.11)",
-          "oklch(49% 0.0839 137.11)",
-          "oklch(61% 0.0839 137.11)",
-          "oklch(72% 0.0839 137.11)",
-          "oklch(84% 0.0839 137.11)",
-          "oklch(95% 0.0839 137.11)"
+          "oklch(15% 0.0041 271.37)",
+          "oklch(26% 0.0041 271.37)",
+          "oklch(38% 0.0041 271.37)",
+          "oklch(49% 0.0041 271.37)",
+          "oklch(61% 0.0041 271.37)",
+          "oklch(72% 0.0041 271.37)",
+          "oklch(84% 0.0041 271.37)",
+          "oklch(95% 0.0041 271.37)"
         ]
       },
-      "chart-lavender": {
+      "gauge-blue": {
         "role": "secondary",
-        "displayName": "Chart Lavender",
+        "displayName": "Gauge Blue",
         "tonalRamp": [
-          "oklch(15% 0.0858 285.04)",
-          "oklch(26% 0.0858 285.04)",
-          "oklch(38% 0.0858 285.04)",
-          "oklch(49% 0.0858 285.04)",
-          "oklch(61% 0.0858 285.04)",
-          "oklch(72% 0.0858 285.04)",
-          "oklch(84% 0.0858 285.04)",
-          "oklch(95% 0.0858 285.04)"
+          "oklch(15% 0.1314 274.52)",
+          "oklch(26% 0.1314 274.52)",
+          "oklch(38% 0.1314 274.52)",
+          "oklch(49% 0.1314 274.52)",
+          "oklch(61% 0.1314 274.52)",
+          "oklch(72% 0.1314 274.52)",
+          "oklch(84% 0.1314 274.52)",
+          "oklch(95% 0.1314 274.52)"
         ]
       },
-      "chart-social": {
+      "gauge-orange": {
         "role": "secondary",
-        "displayName": "Chart Social",
+        "displayName": "Gauge Orange",
         "tonalRamp": [
-          "oklch(15% 0.0867 136.88)",
-          "oklch(26% 0.0867 136.88)",
-          "oklch(38% 0.0867 136.88)",
-          "oklch(49% 0.0867 136.88)",
-          "oklch(61% 0.0867 136.88)",
-          "oklch(72% 0.0867 136.88)",
-          "oklch(84% 0.0867 136.88)",
-          "oklch(95% 0.0867 136.88)"
+          "oklch(15% 0.0923 69.17)",
+          "oklch(26% 0.0923 69.17)",
+          "oklch(38% 0.0923 69.17)",
+          "oklch(49% 0.0923 69.17)",
+          "oklch(61% 0.0923 69.17)",
+          "oklch(72% 0.0923 69.17)",
+          "oklch(84% 0.0923 69.17)",
+          "oklch(95% 0.0923 69.17)"
         ]
       },
-      "chart-blue": {
+      "gauge-green": {
         "role": "secondary",
-        "displayName": "Chart Blue",
+        "displayName": "Gauge Green",
         "tonalRamp": [
-          "oklch(15% 0.0829 241.40)",
-          "oklch(26% 0.0829 241.40)",
-          "oklch(38% 0.0829 241.40)",
-          "oklch(49% 0.0829 241.40)",
-          "oklch(61% 0.0829 241.40)",
-          "oklch(72% 0.0829 241.40)",
-          "oklch(84% 0.0829 241.40)",
-          "oklch(95% 0.0829 241.40)"
+          "oklch(15% 0.1126 138.07)",
+          "oklch(26% 0.1126 138.07)",
+          "oklch(38% 0.1126 138.07)",
+          "oklch(49% 0.1126 138.07)",
+          "oklch(61% 0.1126 138.07)",
+          "oklch(72% 0.1126 138.07)",
+          "oklch(84% 0.1126 138.07)",
+          "oklch(95% 0.1126 138.07)"
         ]
       },
-      "chart-gold": {
+      "scheduled-fill": {
         "role": "secondary",
-        "displayName": "Chart Gold",
+        "displayName": "Scheduled Fill",
         "tonalRamp": [
-          "oklch(15% 0.0901 82.12)",
-          "oklch(26% 0.0901 82.12)",
-          "oklch(38% 0.0901 82.12)",
-          "oklch(49% 0.0901 82.12)",
-          "oklch(61% 0.0901 82.12)",
-          "oklch(72% 0.0901 82.12)",
-          "oklch(84% 0.0901 82.12)",
-          "oklch(95% 0.0901 82.12)"
+          "oklch(15% 0.0138 272.69)",
+          "oklch(26% 0.0138 272.69)",
+          "oklch(38% 0.0138 272.69)",
+          "oklch(49% 0.0138 272.69)",
+          "oklch(61% 0.0138 272.69)",
+          "oklch(72% 0.0138 272.69)",
+          "oklch(84% 0.0138 272.69)",
+          "oklch(95% 0.0138 272.69)"
         ]
       },
-      "chart-neutral": {
+      "scheduled-ink": {
         "role": "secondary",
-        "displayName": "Chart Neutral",
+        "displayName": "Scheduled Ink",
         "tonalRamp": [
-          "oklch(15% 0.0069 247.90)",
-          "oklch(26% 0.0069 247.90)",
-          "oklch(38% 0.0069 247.90)",
-          "oklch(49% 0.0069 247.90)",
-          "oklch(61% 0.0069 247.90)",
-          "oklch(72% 0.0069 247.90)",
-          "oklch(84% 0.0069 247.90)",
-          "oklch(95% 0.0069 247.90)"
+          "oklch(15% 0.1245 270.84)",
+          "oklch(26% 0.1245 270.84)",
+          "oklch(38% 0.1245 270.84)",
+          "oklch(49% 0.1245 270.84)",
+          "oklch(61% 0.1245 270.84)",
+          "oklch(72% 0.1245 270.84)",
+          "oklch(84% 0.1245 270.84)",
+          "oklch(95% 0.1245 270.84)"
+        ]
+      },
+      "published-fill": {
+        "role": "secondary",
+        "displayName": "Published Fill",
+        "tonalRamp": [
+          "oklch(15% 0.0310 133.30)",
+          "oklch(26% 0.0310 133.30)",
+          "oklch(38% 0.0310 133.30)",
+          "oklch(49% 0.0310 133.30)",
+          "oklch(61% 0.0310 133.30)",
+          "oklch(72% 0.0310 133.30)",
+          "oklch(84% 0.0310 133.30)",
+          "oklch(95% 0.0310 133.30)"
+        ]
+      },
+      "published-ink": {
+        "role": "secondary",
+        "displayName": "Published Ink",
+        "tonalRamp": [
+          "oklch(15% 0.1051 138.25)",
+          "oklch(26% 0.1051 138.25)",
+          "oklch(38% 0.1051 138.25)",
+          "oklch(49% 0.1051 138.25)",
+          "oklch(61% 0.1051 138.25)",
+          "oklch(72% 0.1051 138.25)",
+          "oklch(84% 0.1051 138.25)",
+          "oklch(95% 0.1051 138.25)"
+        ]
+      },
+      "review-fill": {
+        "role": "secondary",
+        "displayName": "Review Fill",
+        "tonalRamp": [
+          "oklch(15% 0.0248 75.28)",
+          "oklch(26% 0.0248 75.28)",
+          "oklch(38% 0.0248 75.28)",
+          "oklch(49% 0.0248 75.28)",
+          "oklch(61% 0.0248 75.28)",
+          "oklch(72% 0.0248 75.28)",
+          "oklch(84% 0.0248 75.28)",
+          "oklch(95% 0.0248 75.28)"
+        ]
+      },
+      "review-ink": {
+        "role": "secondary",
+        "displayName": "Review Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0939 69.26)",
+          "oklch(26% 0.0939 69.26)",
+          "oklch(38% 0.0939 69.26)",
+          "oklch(49% 0.0939 69.26)",
+          "oklch(61% 0.0939 69.26)",
+          "oklch(72% 0.0939 69.26)",
+          "oklch(84% 0.0939 69.26)",
+          "oklch(95% 0.0939 69.26)"
         ]
       }
     },
     "typographyMeta": {
-      "metric": {
-        "displayName": "Metric numeral",
-        "purpose": "Tabular dashboard values; responsive size changes are recorded in DESIGN.md."
+      "headline": {
+        "displayName": "Page title",
+        "purpose": "32px desktop and 28px mobile page titles; typography.css overrides earlier home sizes."
       },
-      "card-meta": {
-        "displayName": "Content metadata",
-        "purpose": "Final readable metadata size across supported breakpoints."
+      "title": {
+        "displayName": "Section title",
+        "purpose": "20px section headings."
+      },
+      "body": {
+        "displayName": "Readable content",
+        "purpose": "16px content, document names, table text, and calendar event titles at all breakpoints."
+      },
+      "document-title": {
+        "displayName": "Document title",
+        "purpose": "16px wrapping document titles; miniature aria-hidden artwork is separate."
+      },
+      "metadata": {
+        "displayName": "Supporting text and controls",
+        "purpose": "14px dates, statuses, labels, and controls across breakpoints."
+      },
+      "gauge": {
+        "displayName": "Setup reading",
+        "purpose": "32px recorded 100% workspace setup value."
       }
     },
     "shadows": [
       {
-        "name": "metric-hover",
-        "value": "0 6px 20px #4f578608",
-        "purpose": "Subtle response on metric hover."
+        "name": "mobile-navigation",
+        "value": "0 6px 25px #30395a18",
+        "purpose": "Floating bottom navigation."
       },
       {
-        "name": "navigation-active",
-        "value": "0 3px 8px #7775aa18",
-        "purpose": "Selected icon button."
+        "name": "mobile-menu",
+        "value": "0 8px 35px #30395a20",
+        "purpose": "Expanded mobile destinations."
       },
       {
         "name": "popover",
-        "value": "0 8px 35px #333a5d1a",
+        "value": "0 12px 36px #29304820",
         "purpose": "Workspace floating menu."
       },
       {
         "name": "dialog",
-        "value": "0 20px 70px #303c5b26",
+        "value": "0 20px 70px #29304826",
         "purpose": "Content modal."
       },
       {
         "name": "toast",
-        "value": "0 8px 30px #3b456117",
-        "purpose": "Transient status feedback."
+        "value": "0 8px 30px #29304820",
+        "purpose": "Transient feedback."
       }
     ],
     "motion": [
       {
         "name": "button-state",
         "value": "background 0.18s ease, box-shadow 0.18s ease, color 0.18s ease",
-        "purpose": "Button hover and selection."
+        "purpose": "Inherited button states."
       },
       {
-        "name": "chart-opacity",
-        "value": "opacity 0.2s ease",
-        "purpose": "Distribution category emphasis."
-      },
-      {
-        "name": "toast-entrance",
-        "value": "0.2s ease-out; opacity 0.5 to 1; translate 0 8px to 0 0",
-        "purpose": "Small toast arrival."
+        "name": "document-paper",
+        "value": "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); translateY(-4px) on hover",
+        "purpose": "Subtle paper preview lift."
       },
       {
         "name": "reduced-motion",
         "value": "animation: none !important; transition: none !important; scroll-behavior: auto !important",
-        "purpose": "Applied to all elements and pseudo-elements when reduced motion is requested."
+        "purpose": "Global reduced-motion override; paper hover transform also removed."
       }
     ],
     "breakpoints": [
       {
-        "name": "wide-min",
-        "value": "1450px"
+        "name": "library-four-columns-min",
+        "value": "1700px"
       },
       {
-        "name": "compact-max",
-        "value": "1150px"
+        "name": "wide-shell-min",
+        "value": "1550px"
       },
       {
-        "name": "tablet-max",
+        "name": "home-stack-and-library-two-columns-max",
+        "value": "1200px"
+      },
+      {
+        "name": "library-nav-stack-and-summary-two-columns-max",
         "value": "850px"
       },
       {
-        "name": "mobile-max",
-        "value": "560px"
+        "name": "mobile-shell-max",
+        "value": "700px"
+      },
+      {
+        "name": "operational-mobile-max",
+        "value": "600px"
+      },
+      {
+        "name": "short-desktop-max-height",
+        "value": "850px"
       }
     ],
+    "focus": "outline: 3px solid #7a8be5; outline-offset: 3px",
     "surfaces": {
-      "canvas": "linear-gradient(115deg, #e8ebfb 0%, #ecf0f7 58%, #edf5ef 100%)",
-      "dialogBackdrop": "background: #31394b40; backdrop-filter: blur(4px)",
-      "mobileNavigation": "background: #f6f7fcf5; backdrop-filter: blur(15px)"
+      "aiShortcut": "linear-gradient(155deg, #f6b665 10%, #df9daf 60%, #c883d4)",
+      "dialogBackdrop": "background: #30394c55"
     },
-    "focus": "outline: 3px solid #7d7ccd; outline-offset: 4px",
     "rampNote": "Tonal ramps are synthesized visualization metadata, not additional implemented palette tokens.",
     "provenance": {
-      "authority": ".impeccable/references/clinexa.webp",
-      "review": ".impeccable/review/desktop.png",
+      "authority": ".impeccable/references/inkwise-cover.png",
+      "referenceUrl": "https://dribbble.com/shots/27222028-UI-UX-Design-Document-Editor-Dashboard-Inkwise",
+      "review": [
+        ".impeccable/review/desktop.png",
+        ".impeccable/review/library-desktop.png",
+        ".impeccable/review/calendar-desktop.png",
+        ".impeccable/review/keywords-desktop.png",
+        ".impeccable/review/visibility-desktop.png",
+        ".impeccable/review/mobile.png",
+        ".impeccable/review/composer-mobile.png"
+      ],
       "source": [
-        "src/styles.css",
+        "src/inkwise.css",
+        "src/typography.css",
+        "src/workspace.css",
+        "src/InkwiseDashboard.jsx",
         "src/main.jsx",
-        "PRODUCT.md",
-        "index.html",
         "src/ContentSections.jsx",
         "src/ResearchSections.jsx",
-        "src/sections.css",
-        "src/content-data.js"
+        "src/content-data.js",
+        "public/favicon.svg",
+        "PRODUCT.md",
+        "AGENTS.md"
       ],
-      "shippingRasters": []
+      "shippingRasters": [],
+      "rasterProvenance": "No active photo assets; former contributor portraits are archived under .impeccable/archive/previous-workspace-assets/.",
+      "additionalReference": ".impeccable/references/inkwise.png"
     },
     "sectionAppendix": {
       "scope": [
@@ -280,108 +428,161 @@
         "Keyword research",
         "AI visibility"
       ],
-      "visualContinuity": "Original Clinexa-derived shell and overview remain unchanged; new sections reuse soft panels, pastel graphics, compact Inter, and rounded controls.",
+      "visualContinuity": "All operational sections and overlays use Inkwise cool gray panels, white nested surfaces, periwinkle controls, upright document previews, and shared readable Inter roles.",
       "legibility": {
-        "supportingText": "Darker slate and category-specific ink; section descriptions bind to --cs-muted.",
-        "libraryMobile": "12px titles / 1.6 line height; 10px metadata / 1.5 line height; 10px wrapping statuses.",
-        "calendar": "10px event titles; completed month events retain full opacity and add an accessible Published check SVG."
+        "content": "16px with 1.5 line height; wrap document and event titles.",
+        "metadata": "14px supporting text, controls, and statuses.",
+        "sectionHeadings": "20px.",
+        "pageTitles": "32px desktop; 28px at 700px and below.",
+        "libraryMobile": "16px titles and 14px metadata; list scrolls locally at 780px minimum.",
+        "calendar": "16px event titles and 14px supporting text in locally scrolling month/week grids.",
+        "exception": "Only aria-hidden miniature document artwork may use microtype."
       },
       "responsive": {
-        "1250px": "Tighter main/sidebar layout and controls.",
-        "1000px": "Library/calendar sidebars move below main content; stats become two columns; research panels stack.",
-        "700px": "Two-column asset grid; seven-day week view scrolls horizontally.",
-        "560px": "Existing bottom navigation and mobile layout; readable final library text rules retained."
+        "1200px": "Home right column moves beneath main; calendar aside stacks; library uses 215px left navigation and two asset columns.",
+        "850px": "Library navigation moves below assets; quick actions and summary strip become two columns; AI visibility panels stack.",
+        "700px": "Home recent cards become two columns; right-side panels stack; fixed mobile navigation; home table minimum 740px.",
+        "600px": "Library grid becomes one column; list minimum 780px; keyword rows minimum 560px inside local scroll wrapper; composer fields stack.",
+        "calendar": "Month grid minimum 1120px; seven week columns minimum 160px each; local horizontal scrolling.",
+        "body": "Minimum width 320px."
       },
       "behavior": {
-        "library": "List/grid, title/keyword search, type/status filters, date/title sorting, collection searches, visible-row select-all, session-only bulk review excluding published items.",
+        "library": "Defaults to Grid using shared DocumentPreview; four quick-action cards and left document navigation. List/grid, title/keyword search, type/status filters, date/title sorting, collection searches, visible-row select-all, session-only bulk review excluding published items.",
         "export": "Default Export uses filtered visible rows; selection Export uses selected records, including selections retained outside current filter.",
         "calendar": "Month/week/agenda, date navigation, Today, content-type filter, selectable day agenda, event detail dialog, date-prefilled creation.",
         "composer": "Shared native dialog; calendar prepopulates date, keyword action prepopulates title/keyword; save creates a local session record.",
-        "research": "Five source keywords with search/lower-difficulty filter; AI baseline and source date; readiness unscored; fresh scans require connected workspace."
+        "research": "Five source keywords with search/lower-difficulty filter; AI baseline and source date; readiness unscored; fresh scans require connected workspace. Metrics use a compact divided summary strip; visibility baseline uses a document report sheet."
       },
-      "dataContract": "Added sample records and schedules are illustrative. Research snapshots are historical. Decorative mini-charts are not performance history. No backend, persistence, content generation, or live publishing is configured."
+      "dataContract": "Added sample records and schedules are illustrative. Research snapshots are historical. No backend, persistence, content generation, or live publishing is configured."
+    },
+    "reviewEvidence": {
+      "disposition": "Ship for the two scored fixes",
+      "scope": [
+        "Keyword local scrolling",
+        "Calendar event typography"
+      ],
+      "findings": "Final bounded reviewer confirmed both fixes resolved: keyword rows scroll locally, and calendar event titles retain the 16px body role in readable month/week grids.",
+      "verification": "Rendered checks completed by the parent and reviewer; browser restored.",
+      "historicalReview": "priorReviewEvidence preserves the earlier review and is not current sizing guidance."
+    },
+    "styleIsolation": {
+      "activeHome": "src/InkwiseDashboard.jsx",
+      "mount": "src/main.jsx",
+      "shellAndReset": "src/inkwise.css",
+      "sharedTypography": "src/typography.css",
+      "operationalBoundary": ".workspace-view",
+      "scopedStyles": [
+        "src/workspace.css"
+      ],
+      "rule": "Keep operational sections and overlays inside .workspace-view and all operational styling in @scope (.workspace-view). Only InkwiseDashboard is mounted as home.",
+      "archivedStyles": ".impeccable/archive/previous-workspace-styles/",
+      "archivedAssets": ".impeccable/archive/previous-workspace-assets/",
+      "archivedAlternatives": ".impeccable/archive/",
+      "mark": "Eight-node periwinkle ring in Logo and public/favicon.svg."
+    },
+    "priorReviewEvidence": {
+      "verdict": "Ship after three resolved fixes",
+      "mobile": {
+        "viewport": 390,
+        "documentWidth": 383,
+        "tableWrapper": 325,
+        "tableScrollWidth": 520
+      },
+      "contrast": {
+        "primaryAction": 4.84,
+        "scheduledStatus": 4.71,
+        "publishedStatus": 5.19,
+        "actionIcon": 3.37
+      },
+      "build": "Passed",
+      "rasterProvenance": "Existing contributor JPEG COM metadata matches public/avatars/SOURCES.md; no visual change."
     }
   },
   "components": [
     {
-      "name": "Primary action",
+      "name": "New content",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Session action used in the content dialog.",
-      "html": "<button class=\"ds-primary\">Mark ready for review</button>",
-      "css": ".ds-primary{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;transition:background .18s ease,box-shadow .18s ease,color .18s ease;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#6c6caf;color:white;border:0;border-radius:18px;padding:11px 16px;font-size:11px;cursor:pointer}.ds-primary:hover{background:#575795}.ds-primary:focus-visible{outline:3px solid #7d7ccd;outline-offset:4px} @media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
+      "description": "Primary home action opens the session composer.",
+      "html": "<button class=\"ds-primary\">+ New content</button>",
+      "css": ".ds-primary{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;transition:background .18s ease,box-shadow .18s ease,color .18s ease;border:0;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 17px;border-radius:11px;font-size:14px;background:#5a6bc4;color:#fff;cursor:pointer}.ds-primary:hover{background:#5668c0}.ds-primary:focus-visible{outline:3px solid #7a8be5;outline-offset:3px}@media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
     },
     {
       "name": "Secondary action",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "Light outlined action for View all, export, and Close.",
-      "html": "<button class=\"ds-secondary\">View all <svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M7 17 17 7M7 7h10v10\"/></svg></button>",
-      "css": ".ds-secondary{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;transition:background .18s ease,box-shadow .18s ease,color .18s ease;display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #e5e9ee;background:transparent;color:var(--ink,#282c36);border-radius:20px;padding:8px 12px;font-size:10px;cursor:pointer}.ds-secondary:hover{background:#eeedf9}.ds-secondary:focus-visible{outline:3px solid #7d7ccd;outline-offset:4px} @media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
+      "description": "White toolbar shortcut to an operational view.",
+      "html": "<button class=\"ds-secondary\">Calendar</button>",
+      "css": ".ds-secondary{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;transition:background .18s ease,box-shadow .18s ease,color .18s ease;border:0;min-height:44px;padding:0 15px;border-radius:11px;font-size:14px;background:#fff;color:#686a75;cursor:pointer}.ds-secondary:hover{background:#e8ecf8;color:#5263ad}.ds-secondary:focus-visible{outline:3px solid #7a8be5;outline-offset:3px}@media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
     },
     {
-      "name": "Circle pager",
-      "kind": "button",
-      "refersTo": "button-circle",
-      "description": "Bounded previous/next controls use disabled opacity at the ends.",
-      "html": "<button class=\"ds-circle\" aria-label=\"Next content\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"m9 18 6-6-6-6\"/></svg></button>",
-      "css": ".ds-circle{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;transition:background .18s ease,box-shadow .18s ease,color .18s ease;width:29px;height:29px;border-radius:50%;border:1px solid #e7ebed;background:transparent;display:grid;place-items:center;color:#6c7580;cursor:pointer}.ds-circle:hover{background:#e9eaf6}.ds-circle:disabled{opacity:.35;cursor:default}.ds-circle:focus-visible{outline:3px solid #7d7ccd;outline-offset:4px} @media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
-    },
-    {
-      "name": "Content search",
+      "name": "Header search",
       "kind": "input",
       "refersTo": "input-search",
-      "description": "Search title and type in the list view.",
-      "html": "<label class=\"ds-search\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input aria-label=\"Search content\" placeholder=\"Search content\u2026\"></label>",
-      "css": ".ds-search{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:flex;align-items:center;gap:10px;background:#f1f3f7;padding:10px 15px;border-radius:10px;color:#8990a1;max-width:380px}.ds-search input{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;border:0;background:transparent;min-width:0;flex:1;font-size:12px;color:var(--ink,#282c36);caret-color:var(--purple,#6363ac)}.ds-search input::placeholder{color:#70788b}.ds-search input:focus-visible{outline:3px solid #7d7ccd;outline-offset:6px} @media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
+      "description": "Search content and return to home; Command/Ctrl+K focuses the real field.",
+      "html": "<label class=\"ds-search\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m16 16 5 5\"/></svg><input aria-label=\"Search content\" placeholder=\"Search...\"></label>",
+      "css": ".ds-search{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:flex;align-items:center;gap:10px;background:#fafbfe;border-radius:12px;width:285px;height:48px;padding:0 14px;color:#9a9dac}.ds-search input{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;width:100%;min-width:0;border:0;background:transparent;color:var(--ink,#303136);font-size:16px;caret-color:var(--purple,#7485e8)}.ds-search input::placeholder{color:#777d8b}.ds-search input:focus-visible{outline:3px solid #7a8be5;outline-offset:3px}@media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
     },
     {
       "name": "Active navigation",
       "kind": "nav",
       "refersTo": "navigation-active",
-      "description": "Icon-led active destination; accessible name persists without tooltip.",
-      "html": "<nav class=\"ds-rail\" aria-label=\"Preview navigation\"><button class=\"ds-nav\" aria-label=\"Dashboard\" aria-current=\"page\"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg><span>Dashboard</span></button></nav>",
-      "css": ".ds-rail{display:inline-flex;padding:7px;border-radius:23px;background:rgba(255,255,255,.68)}.ds-nav{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;transition:background .18s ease,box-shadow .18s ease,color .18s ease;width:39px;height:39px;border:0;border-radius:50%;background:#6666ad;color:white;display:grid;place-items:center;position:relative;box-shadow:0 3px 8px #7775aa18;cursor:pointer}.ds-nav span{position:absolute;left:51px;top:8px;white-space:nowrap;background:#363945;color:white;padding:8px 11px;font-size:11px;border-radius:7px;opacity:0;pointer-events:none;transition:opacity .15s}.ds-nav:hover span,.ds-nav:focus-visible span{opacity:1}.ds-nav:focus-visible{outline:3px solid #7d7ccd;outline-offset:4px} @media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
+      "description": "Rounded-square icon destination in the white rail.",
+      "html": "<nav aria-label=\"Preview navigation\"><button class=\"ds-nav\" aria-current=\"page\" aria-label=\"Dashboard\"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.65\"><path d=\"m3 10 9-7 9 7v10H3Z\"/><path d=\"M9 20v-8h6v8\"/></svg></button></nav>",
+      "css": ".ds-nav{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;transition:background .18s ease,box-shadow .18s ease,color .18s ease;width:44px;height:44px;border:0;border-radius:12px;background:#7788e8;color:#fff;display:grid;place-items:center;cursor:pointer}.ds-nav:hover{background:#667bdf}.ds-nav:focus-visible{outline:3px solid #7a8be5;outline-offset:3px}@media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
     },
     {
       "name": "Scheduled status",
       "kind": "chip",
       "refersTo": "status-scheduled",
-      "description": "Noninteractive status label shown with content rows.",
+      "description": "Compact noninteractive status label in the home table.",
       "html": "<span class=\"ds-status\">Scheduled</span>",
-      "css": ".ds-status{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:inline-block;padding:6px 10px;font-size:10px;color:#628356;background:#eaf2e5;border-radius:15px;white-space:nowrap} @media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
+      "css": ".ds-status{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:inline-block;padding:4px 6px;border-radius:3px;background:#edf0fa;color:#5266b4;font-size:14px;font-weight:500;white-space:normal}@media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
     },
     {
-      "name": "Content card",
+      "name": "Document card",
       "kind": "card",
-      "refersTo": "content-card",
-      "description": "Opens the content dialog; readable title and wrapping metadata reflect the final review fix.",
-      "html": "<button class=\"ds-card\"><h3>Allergen labeling best practices</h3><p>SEO article</p><div class=\"ds-meta\"><span>Sep 14, 2026, 08:00 AM</span><span>LunchLink \u00b7 Scheduled</span></div></button>",
-      "css": ".ds-card{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;transition:background .18s ease,box-shadow .18s ease,color .18s ease;width:270px;text-align:left;border:1px solid #edf0f3;border-radius:16px;padding:13px 11px;background:transparent;color:var(--ink,#282c36);cursor:pointer}.ds-card:hover{background:#fff;border-color:#dddfef}.ds-card:focus-visible{outline:3px solid #7d7ccd;outline-offset:4px}.ds-card h3{margin:0;font-size:12px;line-height:1.45;letter-spacing:-.25px;font-weight:500;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.ds-card p{margin:3px 0 0;font-size:10px;color:#68717e}.ds-meta{border-top:1px dashed #e1e6ed;margin-top:12px;padding-top:11px;display:flex;flex-direction:column;gap:8px;color:#68717e;font-size:10px;line-height:1.5} @media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
+      "refersTo": "document-card",
+      "description": "Shared upright DocumentPreview artwork with a readable wrapping title and workspace metadata, used on home and library grid.",
+      "html": "<button class=\"ds-document\"><div class=\"ds-preview\" aria-hidden=\"true\"><span class=\"ds-category\">SEO content</span><div class=\"ds-paper\"><strong>Allergen labeling best practices</strong><p>Thoughtful catering for every team.</p><div></div><div></div></div></div><h3>Allergen labeling best practices</h3><p class=\"ds-meta\">L · LunchLink · Sep 14</p></button>",
+      "css": ".ds-document{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;width:210px;padding:0 0 4px;border:0;border-radius:9px;background:#fff;color:var(--ink,#303136);text-align:left;cursor:pointer}.ds-document:hover{background:#f7f8fd}.ds-preview{height:125px;border-radius:8px;overflow:hidden;background:#eff1f6;display:flex;justify-content:center;padding-top:25px;position:relative}.ds-category{position:absolute;top:7px;left:7px;padding:4px 6px;background:#e1edec;color:#485e5b;border-radius:4px;font-size:14px}.ds-paper{width:95px;min-height:140px;background:white;border-radius:3px 3px 0 0;padding:10px 9px;transition:transform .2s cubic-bezier(.16,1,.3,1)}.ds-paper strong{font-size:4.5px}.ds-paper p{font-size:3.4px;line-height:1.6}.ds-paper div{height:2px;background:#edf0f4;margin:3px 0}.ds-document:hover .ds-paper{transform:translateY(-4px)}.ds-document h3{font-size:16px;font-weight:500;line-height:1.5;margin:11px 7px 7px;white-space:normal;overflow-wrap:anywhere}.ds-meta{font-size:14px;margin:0 7px;color:#6b7180}@media(prefers-reduced-motion:reduce){.ds-paper{transition:none}.ds-document:hover .ds-paper{transform:none}}.ds-document:focus-visible{outline:3px solid #7a8be5;outline-offset:3px}@media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
+    },
+    {
+      "name": "Activity card",
+      "kind": "card",
+      "refersTo": "activity-card",
+      "description": "White inset card linking a workspace event to its section.",
+      "html": "<button class=\"ds-feed\"><span class=\"ds-avatar\">L</span><span>Social content is ready with <strong>28 generated post sets</strong><small>60 topics planned</small></span></button>",
+      "css": ".ds-feed{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;transition:background .18s ease,box-shadow .18s ease,color .18s ease;display:flex;align-items:flex-start;gap:10px;background:white;border:0;border-radius:10px;padding:18px 14px;width:280px;min-height:87px;text-align:left;font-size:16px;line-height:1.55;color:#6c707d;cursor:pointer}.ds-feed:hover{background:#edf0fa}.ds-feed strong{font-weight:400;color:#373a42}.ds-feed small{display:block;margin-top:5px;font-size:14px;color:#6b7180}.ds-avatar{display:grid;place-items:center;width:32px;height:32px;flex-shrink:0;border-radius:50%;background:#e6eee8;color:#7b9b83}.ds-feed:focus-visible{outline:3px solid #7a8be5;outline-offset:3px}@media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
     },
     {
       "name": "Panel",
       "kind": "card",
       "refersTo": "panel",
-      "description": "Primary tonal container for overview and detail surfaces.",
-      "html": "<section class=\"ds-panel\"><h2>Content production</h2><p>Illustrative activity</p></section>",
-      "css": ".ds-panel{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;background:var(--panel,rgba(255,255,255,.79));border-radius:var(--radius,20px);padding:22px 24px 14px;color:var(--ink,#282c36);min-width:240px}.ds-panel h2{margin:0;font-size:15px;font-weight:500;letter-spacing:-.45px}.ds-panel p{margin:18px 0 0;color:#68717e;font-size:10px} @media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
+      "description": "Flat near-white container for home content sections.",
+      "html": "<section class=\"ds-panel\"><h2>Workspace Overview</h2><p>5 / 5 steps complete</p></section>",
+      "css": ".ds-panel{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;background:var(--panel,#f7f8fb);border-radius:var(--radius,23px);padding:21px 22px;min-width:240px;color:var(--ink,#303136)}.ds-panel h2{font-size:20px;font-weight:500;line-height:1.4;letter-spacing:-.25px;margin:0}.ds-panel p{font-size:16px;color:#6b7180}@media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
     }
   ],
   "narrative": {
-    "northStar": "The selected Clinexa dashboard screen",
-    "overview": "This system records the implemented Uplift AI dashboard in React and Vite. Its visual authority is the user's selected screen inside the Clinexa laptop reference, adapted to Uplift's content operations terminology. The cool lavender-to-mint canvas, soft white panels, compact Inter typography, purple icon rail, and pastel charts follow that selection; this is not a newly invented visual identity.",
+    "northStar": "The selected Inkwise document workspace",
+    "overview": "This system records the implemented React and Vite dashboard, following the user-pinned Inkwise cover composition with Uplift AI product content. Its cool gray canvas, near-white panels, periwinkle navigation, readable Inter typography, and miniature document previews establish a quiet working surface. The reference determines the visual hierarchy; Uplift AI supplies the terminology and LunchLink workspace content.\n\nThe home view pairs a broad content column with a narrower activity and setup column. The interface stays flat and softly rounded, with white nested surfaces and fine rules organizing dense information. The selected authority is the [Inkwise dashboard reference](https://dribbble.com/shots/27222028-UI-UX-Design-Document-Editor-Dashboard-Inkwise), preserved in `.impeccable/references/inkwise-cover.png` and `inkwise.png`. The user’s later readability request establishes larger shared type roles throughout every section. The eight-node periwinkle ring is the active mark.",
     "keyCharacteristics": [
-      "Quiet tonal separation between the canvas and panels.",
-      "Compact text with large, steady metric numerals.",
-      "Rounded controls, slim SVG icons, and pastel data graphics.",
-      "A dense desktop overview that stacks into a mobile workspace."
+      "A white vertical icon rail beside a cool gray working canvas.",
+      "Four miniature document previews above a six-row content table.",
+      "A compact activity feed and a three-color semicircular setup gauge.",
+      "Soft rectangular controls, restrained shadows, and responsive contained scrolling."
     ],
     "rules": [
       {
         "name": "The Labeled Data Rule",
-        "body": "Pair chart colors and status dots with text; preserve the visible illustrative-data and snapshot labels.",
-        "section": "colors"
+        "body": "Pair status and gauge colors with text; preserve the source snapshot, sample schedule, and session-only disclosures.",
+        "section": "neutral"
+      },
+      {
+        "name": "The Reading Roles Rule",
+        "body": "Keep content at 16px and supporting text at 14px across breakpoints; use local scrolling for dense data instead of shrinking text.",
+        "section": "typography"
       },
       {
         "name": "The Overlay Depth Rule",
@@ -390,16 +591,46 @@
       }
     ],
     "dos": [
-      "**Do** preserve the user-selected Clinexa screen's quiet palette and dashboard hierarchy.",
-      "**Do** retain readable card titles and metadata when adapting density.",
-      "**Do** pair interactive chart marks with keyboard focus behavior and textual values.",
-      "**Do** distinguish historical workspace snapshots, illustrative charts, and session-only changes."
+      "**Do** preserve the user-selected Inkwise home composition and shell hierarchy.",
+      "**Do** use Uplift AI content and terminology within the selected visual reference.",
+      "**Do** preserve the reviewed action and status contrast and visible keyboard focus.",
+      "**Do** keep content at 16px, metadata and controls at 14px, section headings at 20px, and page titles at 32px desktop / 28px mobile.",
+      "**Do** keep wide tables and calendar grids inside their own scroll containers.",
+      "**Do** preserve the eight-node periwinkle ring and the single active Inkwise home.",
+      "**Do** keep operational CSS scoped to `.workspace-view` in `src/workspace.css`.",
+      "**Do** distinguish historical source counts, sample schedules, and session-only changes."
     ],
     "donts": [
-      "**Don't** import the original Uplift website's layout or imagery into this reference-led dashboard.",
-      "**Don't** replace SVG and CSS data graphics with raster approximations.",
-      "**Don't** treat the smallest auxiliary annotations as the default text scale for new components.",
-      "**Don't** imply that a preview interaction publishes content or changes a live connection."
+      "**Don't** bring original Uplift AI website images or layouts into this dashboard.",
+      "**Don't** restore earlier arrow logos, contributor portraits, metric mini-charts, tilted document placeholders, or operational gradient callouts from other dashboards.",
+      "**Don't** import archived dashboards, stylesheets, or portrait assets into the app.",
+      "**Don't** use the decorative paper-preview microtype as a real content text scale.",
+      "**Don't** imply that local creation or review actions generate, publish, or persist content."
     ]
+  },
+  "appearance": {
+    "preference": {
+      "options": [
+        "system",
+        "light",
+        "dark"
+      ],
+      "default": "system",
+      "storageKey": "dashboard-2-theme",
+      "synchronizesAcrossTabs": true
+    },
+    "scope": "All active Inkwise surfaces, operational views, overlays, and native form controls",
+    "dark": {
+      "canvas": "#151820",
+      "panel": "#1e232e",
+      "surface": "#272d3a",
+      "ink": "#e8ebf3",
+      "supporting": "#b0b8cb",
+      "primary": "#a7b3ff",
+      "onPrimary": "#171e38"
+    },
+    "owner": "src/inkwise.css",
+    "operationalBoundary": "@scope (.workspace-view) in src/workspace.css",
+    "typography": "Unchanged shared roles in src/typography.css"
   }
 }
