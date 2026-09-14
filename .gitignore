@@ -7,3 +7,5 @@ dist
 !.env.example
 .impeccable/review/
 .impeccable/references/
+.impeccable/archive/
+.impeccable/legacy-inkwise-design.*
