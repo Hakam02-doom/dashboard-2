@@ -4,9 +4,13 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
-    "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1"
+    "dev": "node scripts/dashboard.mjs dev",
+    "build": "node scripts/dashboard.mjs build",
+    "preview": "node scripts/dashboard.mjs preview",
+    "deploy": "node scripts/dashboard.mjs deploy",
+    "check:project": "node scripts/dashboard.mjs check",
+    "test:isolation": "node --test scripts/project-identity.test.mjs",
+    "prepare": "node scripts/setup-hooks.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.5",
