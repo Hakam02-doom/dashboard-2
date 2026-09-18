@@ -161,6 +161,7 @@ export function ContentComposer({
   onSave,
   initialDate,
   initialKeyword = "",
+  initialType = "SEO article",
 }) {
   const ref = useRef(null);
   const [title, setTitle] = useState(""),
@@ -172,12 +173,13 @@ export function ContentComposer({
   useEffect(() => {
     if (open) {
       setTitle(initialKeyword);
+      setType(initialType);
       setKeyword(initialKeyword);
       setStatus("Draft");
       setDate(initialDate || "2026-09-14");
       ref.current?.showModal();
     } else ref.current?.close();
-  }, [open, initialDate, initialKeyword]);
+  }, [open, initialDate, initialKeyword, initialType]);
   function save(e) {
     e.preventDefault();
     if (!title.trim()) return;

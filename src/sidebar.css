@@ -1,0 +1,43 @@
+/* Preserve the original compact rail; only its expanded state changes layout. */
+.sidebar .sidebar-toggle { display: none; }
+
+@media (min-width: 561px) {
+  .sidebar {
+    transition: flex-basis 220ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .sidebar > .brand {
+    align-self: flex-start;
+    margin-left: 3.5px;
+    flex-shrink: 0;
+  }
+  .sidebar .sidebar-toggle { display: grid; }
+  .sidebar-expanded { flex-basis: 200px; }
+  .sidebar-expanded .nav-rail,
+  .sidebar-expanded .bottom-rail { width: calc(100% - 3px); }
+  .sidebar-expanded .nav-item {
+    width: 100%;
+    height: 39px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 0 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .sidebar-expanded .mobile-nav-label {
+    display: inline;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 400;
+  }
+  .sidebar-expanded .mobile-more { display: none; }
+  .sidebar-expanded .notification-button i { left: 26px; right: auto; }
+  .sidebar-expanded .nav-item[data-tooltip]::after { display: none; }
+  .sidebar-expanded .nav-item > svg { flex-shrink: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar, .sidebar-toggle svg { transition: none; }
+}

@@ -1,0 +1,99 @@
+/* Extend Dashboard 2's established reading scale to the newer workspace sections.
+   Keep the original library, calendar, and overview components authoritative. */
+#root :is(.seo-navigation, .ai-tabs, .sw-tabs) button {
+  font-family: inherit;
+  font-weight: 400;
+  min-height: 40px;
+}
+#root :is(.seo-workspace, .ai-workspace, .social-workspace) :is(input, select, textarea) {
+  font-family: inherit;
+}
+@media (min-width: 851px) {
+  #root :is(.seo-workspace, .ai-workspace, .social-workspace) .cs-page-intro h2 {
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+  #root :is(.seo-workspace, .ai-workspace, .social-workspace) .cs-page-intro p {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  #root :is(.seo-card, .seo-report, .ai-panel, .sw-panel, .sw-rhythm) h3,
+  #root :is(.sd-idea h3, .seo-card-heading h3, .sw-heading h3) {
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1.35;
+  }
+  #root :is(.seo-table, .ai-table-scroll table, .sw-matrix),
+  #root :is(.seo-query, .seo-improvements strong, .sd-source-title strong,
+    .sd-idea > p, .sd-next-step p, .ai-coverage p, .ai-opportunity-grid p,
+    .ai-editorial-copy, .ai-gap-row p, .ai-gap-guide ol, .ai-review-checks,
+    .ai-bars > div > div:first-child, .ai-ranking > div:first-child,
+    .sw-caption-copy, .sw-connection-row p, .sw-setting strong,
+    .sw-flow h4, .sw-settings-layout h4, .sw-connection-detail > p) {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  #root .sw-matrix td:first-child button,
+  #root .seo-article-title,
+  #root :is(.seo-search, .ai-search) input,
+  #root :is(.sw-add, .ai-add-form, .seo-dialog) :is(input, select, textarea) {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  #root :is(.seo-navigation, .ai-tabs, .sw-tabs, .sw-view-switch) button,
+  #root :is(.seo-table, .ai-table-scroll table, .sw-matrix) th,
+  #root :is(.seo-badge, .ai-tag, .sd-tag, .sw-cell, .sw-sample,
+    .seo-muted, .seo-preview-label, .seo-notice, .seo-legend,
+    .seo-table-footer, .seo-footer, .ai-footer, .sw-footer,
+    .seo-query small, .seo-score small, .seo-audit-bars small,
+    .seo-x-axis, .seo-y-axis, .seo-improvements p, .seo-connection-notice,
+    .sd-breakdown, .sd-match, .sd-topic, .sd-source-chip, .sd-source-title small,
+    .sd-idea-bottom > span, .sd-next-step strong, .sd-insight p,
+    .sd-sample-note, .sd-chart-caption, .sd-growth > div,
+    .sd-profile-total, .sd-idea select, .sd-opportunity-toolbar select,
+    .ai-panel-foot, .ai-trend > div, .ai-ranking span, .ai-ranking-bar b,
+    .ai-rank-labels, .ai-action-type, .ai-keyword-summary span,
+    .ai-readiness-strip > span, .ai-readiness-strip small,
+    .ai-traffic-strip small, .ai-evidence p, .ai-review > p,
+    .sw-summary > span, .sw-summary .sw-sample, .sw-muted,
+    .sw-heading > span, .sw-matrix small, .sw-legend,
+    .sw-caption-title small, .sw-caption-footer span, .sw-rhythm p,
+    .sw-rhythm-track button, .sw-calendar-note, .sw-disconnected,
+    .sw-flow p, .sw-callout, .sw-setting small, .sw-setting select,
+    .sw-settings-save p, .sw-recipe-path span) {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  #root :is(.seo-table, .ai-table-scroll table, .sw-matrix) td {
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+  #root :is(.seo-workspace, .ai-workspace, .social-workspace) .cs-button {
+    font-size: 14px;
+    min-height: 40px;
+  }
+  #root :is(.seo-workspace, .ai-workspace, .social-workspace) .cs-stat-heading {
+    font-size: 16px;
+  }
+  #root :is(.seo-workspace, .ai-workspace, .social-workspace) .cs-stat-value strong {
+    font-size: 35px;
+  }
+  #root :is(.seo-workspace, .ai-workspace, .social-workspace) .cs-stat-value p {
+    font-size: 14px;
+  }
+  #root .sw-post-layout { grid-template-columns: minmax(0, 1.6fr) minmax(340px, 1fr); }
+  #root .sw-cell { min-width: 56px; }
+  #root .sw-connection-row > div { min-width: 200px; }
+  #root .sd-idea-bottom { align-items: start; }
+  #root .sw-rhythm-track { flex-wrap: wrap; }
+}
+@media (min-width: 851px) and (max-width: 1100px) {
+  #root .sw-post-layout { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 850px) {
+  #root :is(.seo-badge, .sd-tag, .ai-tag, .sw-cell, .sw-matrix small,
+    .sw-caption-footer span, .sw-disconnected, .sd-idea-bottom > span) {
+    font-size: 12px;
+  }
+}

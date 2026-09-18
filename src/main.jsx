@@ -31,18 +31,24 @@ import {
   MoreHorizontal,
   Moon,
   Sun,
+  PanelLeft,
 } from "lucide-react";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
 import "@fontsource/inter/latin-600.css";
 import "./styles.css";
 import { LibraryPage, CalendarPage, ContentComposer } from "./ContentSections";
+import { SeoWorkspace } from "./SeoWorkspace";
+import { AiWorkspace } from "./AiWorkspace";
+import { SocialWorkspace } from "./SocialWorkspace";
 import { extraContent } from "./content-data";
 import { KeywordPage, VisibilityPage } from "./ResearchSections";
 
 import "./desktop-typography.css";
 import "./mobile-layout.css";
 import "./theme.css";
+import "./sidebar.css";
+import "./workspace-consistency.css";
 import { useAppearance } from "./appearance";
 
 const content = [
@@ -311,9 +317,18 @@ function ContentAvatar({ item }) {
   );
 }
 
+function readSidebarPreference() {
+  try {
+    return localStorage.getItem("uplift-dashboard-2-sidebar-expanded") === "true";
+  } catch {
+    return false;
+  }
+}
+
 function App() {
   const { preference, dark, setPreference } = useAppearance();
-  const [mobileMenu, setMobileMenu] = useState(false),
+  const [sidebarExpanded, setSidebarExpanded] = useState(readSidebarPreference),
+    [mobileMenu, setMobileMenu] = useState(false),
     [view, setView] = useState("Dashboard"),
     [period, setPeriod] = useState("Month"),
     [offset, setOffset] = useState(0),
@@ -341,12 +356,25 @@ function App() {
     return () => clearTimeout(timer);
   }, [toast]);
   useEffect(() => {
+    try {
+      localStorage.setItem(
+        "uplift-dashboard-2-sidebar-expanded",
+        String(sidebarExpanded),
+      );
+    } catch {
+      // The sidebar remains usable when browser storage is unavailable.
+    }
+  }, [sidebarExpanded]);
+  useEffect(() => {
     function dismiss(e) {
       if (popRef.current && !popRef.current.contains(e.target))
         setPopover(null);
     }
     function esc(e) {
-      if (e.key === "Escape") setPopover(null);
+      if (e.key === "Escape") {
+        setPopover(null);
+        setSidebarExpanded(false);
+      }
     }
     document.addEventListener("pointerdown", dismiss);
     document.addEventListener("keydown", esc);
@@ -391,7 +419,10 @@ function App() {
   const series = chartSets[period];
   return (
     <div className="app-shell">
-      <aside className="sidebar" aria-label="Main navigation">
+      <aside
+        className={"sidebar " + (sidebarExpanded ? "sidebar-expanded" : "")}
+        aria-label="Main navigation"
+      >
         <button
           className="brand"
           aria-label="Uplift AI home"
@@ -400,7 +431,10 @@ function App() {
         >
           <Logo />
         </button>
-        <nav className={"nav-rail " + (mobileMenu ? "mobile-expanded" : "")}>
+        <nav
+          id="primary-navigation"
+          className={"nav-rail " + (mobileMenu ? "mobile-expanded" : "")}
+        >
           {navItems.map(({ name, icon: Icon }) => (
             <button
               key={name}
@@ -411,7 +445,7 @@ function App() {
               onClick={() => navigate(name)}
             >
               <Icon size={19} strokeWidth={1.7} />
-              <span className="mobile-nav-label">{name}</span>
+              <span className="mobile-nav-label" aria-hidden={!sidebarExpanded && !mobileMenu}>{name}</span>
             </button>
           ))}
         </nav>
@@ -434,6 +468,7 @@ function App() {
             }}
           >
             <Bell size={19} />
+            <span className="mobile-nav-label" aria-hidden={!sidebarExpanded}>Notifications</span>
             {!noticeRead && <i />}
           </button>
           <button
@@ -443,6 +478,18 @@ function App() {
             onClick={() => navigate("Settings")}
           >
             <Settings size={19} />
+            <span className="mobile-nav-label" aria-hidden={!sidebarExpanded}>Settings</span>
+          </button>
+          <button
+            className="nav-item sidebar-toggle"
+            aria-label={sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
+            aria-expanded={sidebarExpanded}
+            aria-controls="primary-navigation"
+            data-tooltip={sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
+            onClick={() => setSidebarExpanded((expanded) => !expanded)}
+          >
+            <PanelLeft size={19} strokeWidth={1.7} aria-hidden="true" />
+            <span className="mobile-nav-label" aria-hidden={!sidebarExpanded}>Collapse sidebar</span>
           </button>
         </div>
       </aside>
@@ -793,7 +840,29 @@ function App() {
               setComposerOpen(true);
             }}
           />
-        ) : ["Content library", "Social media"].includes(view) ? (
+        ) : view === "Content library" ? (
+          <SeoWorkspace onToast={setToast} onConnections={() => navigate("Connections")} library={
+            <LibraryPage
+              items={items}
+              setItems={setItems}
+              onOpen={setSelected}
+              onToast={setToast}
+              onCreate={() => {
+                setComposerKeyword("");
+                setComposerDate("2026-09-14");
+                setComposerOpen(true);
+              }}
+              onCalendar={() => navigate("Content calendar")}
+            />
+          } />
+        ) : view === "Social media" ? (
+          <SocialWorkspace items={items} onOpen={setSelected} onToast={setToast}
+            onCreate={(date, title = "") => {
+              setComposerKeyword(title);
+              setComposerDate(date || "2026-09-14");
+              setComposerOpen(true);
+            }}
+            library={
           <LibraryPage
             key={view}
             items={items}
@@ -808,6 +877,7 @@ function App() {
             socialOnly={view === "Social media"}
             onCalendar={() => navigate("Content calendar")}
           />
+            } />
         ) : view === "Keyword research" ? (
           <KeywordPage
             onCreate={(keyword) => {
@@ -818,7 +888,15 @@ function App() {
             onLibrary={() => navigate("Content library")}
           />
         ) : view === "AI visibility" ? (
-          <VisibilityPage onKeywords={() => navigate("Keyword research")} />
+          <AiWorkspace
+            overview={<VisibilityPage onKeywords={() => navigate("Keyword research")} />}
+            onToast={setToast}
+            onCreate={(keyword) => {
+              setComposerKeyword(keyword);
+              setComposerDate("2026-09-14");
+              setComposerOpen(true);
+            }}
+          />
         ) : view === "Settings" ? (
           <section className="panel detail-page">
             <div className="detail-heading">
@@ -954,6 +1032,7 @@ function App() {
         )}
       </main>
       <ContentComposer
+        initialType={view === "Social media" ? "Social post" : "SEO article"}
         open={composerOpen}
         initialDate={composerDate}
         initialKeyword={composerKeyword}
