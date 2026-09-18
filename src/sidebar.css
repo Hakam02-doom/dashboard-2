@@ -41,3 +41,10 @@
 @media (prefers-reduced-motion: reduce) {
   .sidebar, .sidebar-toggle svg { transition: none; }
 }
+
+@media (min-width: 561px) {
+  .sidebar > .sidebar-toggle { width: 49px; height: 42px; flex-shrink: 0; margin-top: 24px; background: var(--d2-surface, rgba(255,255,255,.7)); border-radius: 15px; }
+  .sidebar > .sidebar-toggle:hover { background: var(--d2-purple-soft, #e7e5f5); }
+  .sidebar > .sidebar-toggle + .nav-rail { margin-top: 12px; }
+  .sidebar-expanded > .sidebar-toggle { width: calc(100% - 3px); }
+}

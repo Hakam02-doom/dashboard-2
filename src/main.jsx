@@ -32,6 +32,7 @@ import {
   Moon,
   Sun,
   PanelLeft,
+  Building2,
 } from "lucide-react";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
@@ -41,6 +42,7 @@ import { LibraryPage, CalendarPage, ContentComposer } from "./ContentSections";
 import { SeoWorkspace } from "./SeoWorkspace";
 import { AiWorkspace } from "./AiWorkspace";
 import { SocialWorkspace } from "./SocialWorkspace";
+import { BusinessProfile } from "./BusinessProfile";
 import { extraContent } from "./content-data";
 import { KeywordPage, VisibilityPage } from "./ResearchSections";
 
@@ -140,6 +142,7 @@ const navItems = [
   { name: "Keyword research", icon: Search },
   { name: "Google Business", icon: Globe2 },
   { name: "Social media", icon: Share2 },
+  { name: "Business Profile", icon: Building2 },
   { name: "Connections", icon: Link2 },
 ];
 const mixes = [
@@ -441,6 +444,17 @@ function App() {
         >
           <Logo />
         </button>
+          <button
+            className="nav-item sidebar-toggle"
+            aria-label={sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
+            aria-expanded={sidebarExpanded}
+            aria-controls="primary-navigation"
+            data-tooltip={sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
+            onClick={() => setSidebarExpanded((expanded) => !expanded)}
+          >
+            <PanelLeft size={19} strokeWidth={1.7} aria-hidden="true" />
+            <span className="mobile-nav-label" aria-hidden={!sidebarExpanded}>Collapse sidebar</span>
+          </button>
         <nav
           id="primary-navigation"
           className={"nav-rail " + (mobileMenu ? "mobile-expanded" : "")}
@@ -490,17 +504,7 @@ function App() {
             <Settings size={19} />
             <span className="mobile-nav-label" aria-hidden={!sidebarExpanded}>Settings</span>
           </button>
-          <button
-            className="nav-item sidebar-toggle"
-            aria-label={sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
-            aria-expanded={sidebarExpanded}
-            aria-controls="primary-navigation"
-            data-tooltip={sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
-            onClick={() => setSidebarExpanded((expanded) => !expanded)}
-          >
-            <PanelLeft size={19} strokeWidth={1.7} aria-hidden="true" />
-            <span className="mobile-nav-label" aria-hidden={!sidebarExpanded}>Collapse sidebar</span>
-          </button>
+
         </div>
       </aside>
       <main className="main">
@@ -907,6 +911,8 @@ function App() {
               setComposerOpen(true);
             }}
           />
+        ) : view === "Business Profile" ? (
+          <BusinessProfile onToast={setToast} />
         ) : view === "Settings" ? (
           <section className="panel detail-page">
             <div className="detail-heading">
