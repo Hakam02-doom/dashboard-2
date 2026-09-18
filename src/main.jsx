@@ -49,6 +49,7 @@ import "./mobile-layout.css";
 import "./theme.css";
 import "./sidebar.css";
 import "./workspace-consistency.css";
+import "./analytics-motion.css";
 import { useAppearance } from "./appearance";
 
 const content = [
@@ -326,6 +327,7 @@ function readSidebarPreference() {
 }
 
 function App() {
+  const [openingAnalytics, setOpeningAnalytics] = useState(true);
   const { preference, dark, setPreference } = useAppearance();
   const [sidebarExpanded, setSidebarExpanded] = useState(readSidebarPreference),
     [mobileMenu, setMobileMenu] = useState(false),
@@ -346,6 +348,14 @@ function App() {
     [noticeRead, setNoticeRead] = useState(false);
   const dialog = useRef(null),
     popRef = useRef(null);
+  useEffect(() => {
+    if (view !== "Dashboard") {
+      setOpeningAnalytics(false);
+      return;
+    }
+    const timer = setTimeout(() => setOpeningAnalytics(false), 1000);
+    return () => clearTimeout(timer);
+  }, [view]);
   useEffect(() => {
     if (selected) dialog.current?.showModal();
     else dialog.current?.close();
@@ -418,7 +428,7 @@ function App() {
   const upcomingItems = items.filter((i) => i.status !== "Published");
   const series = chartSets[period];
   return (
-    <div className="app-shell">
+    <div className={`app-shell${openingAnalytics ? " analytics-opening" : ""}`}>
       <aside
         className={"sidebar " + (sidebarExpanded ? "sidebar-expanded" : "")}
         aria-label="Main navigation"
