@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {evidenceText,namedEvidence} from '../server/evidence-normalization.mjs';
+test('formatting does not hide evidence or turn URLs into brand mentions',()=>{assert.equal(evidenceText('**Semrush** is\n useful.'),evidenceText('Semrush is useful.'));assert.equal(namedEvidence('Try **Semrush**.','Semrush'),true);assert.equal(namedEvidence('Try Semrushish.','Semrush'),false);assert.equal(namedEvidence('[source](https://semrush.com)','Semrush'),false);});

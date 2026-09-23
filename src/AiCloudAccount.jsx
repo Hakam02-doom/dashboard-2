@@ -1,0 +1,13 @@
+import React,{useState,useEffect} from 'react';
+import {aiCloud,aiFetch,syncBusinessProfiles,loadCloudBusinesses} from './ai-cloud';
+import {BUSINESS_KEY} from './ai-business';
+export function AiCloudAccount(){
+ const [user,setUser]=useState(null),[email,setEmail]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');
+ useEffect(()=>{if(!aiCloud)return;aiCloud.auth.getSession().then(({data})=>setUser(data.session?.user||null));const {data}=aiCloud.auth.onAuthStateChange((_event,session)=>setUser(session?.user||null));return()=>data.subscription.unsubscribe();},[]);
+ async function signIn(e){e.preventDefault();setBusy(true);setError('');try{const {error}=await aiCloud.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+'/'}});if(error)throw error;setMessage('Check your email for the Dashboard 2 sign-in link.');}catch(e){setError(e.message);}finally{setBusy(false);}}
+ async function connect(){setBusy(true);setError('');try{
+  const response=await aiFetch('/api/ai/connections',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'claim'})});const result=await response.json();if(!response.ok)throw Error(result.error);
+  const local=JSON.parse(localStorage.getItem(BUSINESS_KEY)||'{"profiles":{}}');await syncBusinessProfiles(local.profiles||{});const cloud=await loadCloudBusinesses();for(const row of cloud)local.profiles[row.domain]=row.profile;if(!local.active)local.active=cloud[0]?.domain||'';localStorage.setItem(BUSINESS_KEY,JSON.stringify(local));setMessage('Cloud account connected. Business profiles and monitoring history are available across devices.');
+ }catch(e){setError(e.message);}finally{setBusy(false);}}
+ return <section className="panel aiv-cloud-account"><h3>Cloud account</h3><p>Sign in to access your monitoring history securely from Dashboard 2.</p>{!aiCloud?<p>Cloud configuration is unavailable.</p>:user?<><p>Signed in as {user.email}</p><div className="pr-top-actions"><button className="cs-button filled" disabled={busy} onClick={connect}>Connect monitoring account</button><button className="cs-button" disabled={busy} onClick={async()=>{await aiCloud.auth.signOut();setMessage('Signed out.');}}>Sign out</button></div></>:<form onSubmit={signIn}><label>Email address<input type="email" required autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)}/></label><button className="cs-button filled" disabled={busy}>{busy?'Sending…':'Send sign-in link'}</button></form>}{message&&<p role="status">{message}</p>}{error&&<p className="air-error" role="alert">{error}</p>}</section>;
+}

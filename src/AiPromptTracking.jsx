@@ -1,0 +1,18 @@
+import React,{useState} from 'react';
+import {normalizePrompt} from './ai-prompt-data';
+export function AiPromptTracking({prompts,answers,busy,ready,remaining,onRun,onToggle}){
+ const [selected,setSelected]=useState(null),[search,setSearch]=useState('');
+ const tracked=prompts.filter(p=>p.status==='saved'&&p.tracking);
+ const history=p=>answers.filter(a=>normalizePrompt(a.prompt)===normalizePrompt(p.text)).sort((a,b)=>new Date(b.at)-new Date(a.at));
+ const observed=tracked.filter(p=>history(p).length).length;
+ const details=selected?history(selected):[];
+ return <section className="panel ai-panel air-tracking" aria-label="Prompt tracking">
+ <div className="air-library-head"><div><h3>Follow the questions your buyers ask.</h3><p>ChatGPT Search · On demand · Location not specified</p></div><span className="ai-tag">{observed} / {tracked.length} measured</span></div>
+ <p className="ai-panel-foot">Run a question to collect its answer, brand mentions, competitors and sources. Today’s result is reused; run again on a later day to build history. No automatic schedule is active.</p>
+ <label className="ai-search"><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Find a tracked question…" aria-label="Search tracked questions"/></label>
+ <div className="ai-table-scroll" tabIndex={0} aria-label="Tracked prompt results"><table><thead><tr><th>Question / topic</th><th>Brand visibility</th><th>Latest result</th><th>Last collected</th><th>Actions</th></tr></thead><tbody>{tracked.filter(p=>`${p.text} ${p.topic}`.toLowerCase().includes(search.toLowerCase())).map(p=>{const h=history(p),last=h[0];return <tr key={p.id}><td>{p.text}<small>{p.topic} · {p.type}</small></td><td>{h.length?`${Math.round(h.filter(a=>a.mentioned).length/h.length*100)}%`:'—'}<small>{h.length} saved answers</small></td><td>{last?last.mentioned?'Mentioned':'Not mentioned':'Not measured'}<small>{last?`${last.competitors?.length||0} competitors · ${last.cited?'Brand cited':'Brand not cited'}`:'Run your first collection'}</small></td><td>{last?new Date(last.at).toLocaleString():'—'}</td><td><div className="air-actions"><button className="cs-button" disabled={busy||!ready||remaining===0} onClick={()=>onRun(p)}>{busy?'Working…':last?.at.slice(0,10)===new Date().toISOString().slice(0,10)?'Refresh / reuse today':'Collect answer'}</button><button className="ai-text-button" disabled={!h.length} onClick={()=>setSelected(p)}>History</button><button className="ai-text-button" disabled={busy} onClick={()=>onToggle(p)}>Pause</button></div></td></tr>;})}</tbody></table></div>
+ {!tracked.length&&<div className="ai-empty"><h3>Choose the questions to follow</h3><p>Save research suggestions or add your own, then select “Track” in your saved library.</p></div>}
+ <p className="ai-panel-foot">{remaining??'—'} trial attempts remaining. New collections use one search credit plus capped analysis. Gemini, Perplexity, geographic targeting and scheduled collection are not enabled here.</p>
+ {selected&&<section className="aiv-evidence" aria-label="Prompt answer history"><div className="air-library-head"><h3>{selected.text}</h3><button className="cs-button" onClick={()=>setSelected(null)}>Close history</button></div>{details.map(a=><details key={a.id}><summary>{new Date(a.at).toLocaleString()} · {a.engine} · {a.mentioned?'Mentioned':'Not mentioned'}</summary><p>Sentiment: {a.sentiment} · Explicit rank: {a.position?`#${a.position}`:'Not ranked'} · Competitors: {a.competitors?.join(', ')||'None detected'}</p><p style={{whiteSpace:'pre-wrap'}}>{a.answer}</p><strong>Cited sources</strong><ul>{(a.sources||[]).map(url=><li key={url}><a href={url} target="_blank" rel="noreferrer">{url}</a></li>)}</ul></details>)}</section>}
+ </section>;
+}

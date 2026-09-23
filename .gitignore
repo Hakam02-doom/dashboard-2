@@ -9,3 +9,5 @@ dist
 .impeccable/references/
 .impeccable/archive/
 .impeccable/legacy-inkwise-design.*
+
+.local-ai/

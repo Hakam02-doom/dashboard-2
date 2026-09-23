@@ -40,7 +40,8 @@ import "@fontsource/inter/latin-600.css";
 import "./styles.css";
 import { LibraryPage, CalendarPage, ContentComposer } from "./ContentSections";
 import { SeoWorkspace } from "./SeoWorkspace";
-import { AiWorkspace } from "./AiWorkspace";
+import { AiConnections } from "./AiConnections";
+import { AiVisibilityEntry } from "./AiVisibilityEntry";
 import { SocialWorkspace } from "./SocialWorkspace";
 import { BusinessProfile } from "./BusinessProfile";
 import { extraContent } from "./content-data";
@@ -902,8 +903,9 @@ function App() {
             onLibrary={() => navigate("Content library")}
           />
         ) : view === "AI visibility" ? (
-          <AiWorkspace
+          <AiVisibilityEntry
             overview={<VisibilityPage onKeywords={() => navigate("Keyword research")} />}
+            onSettings={() => navigate("Settings")}
             onToast={setToast}
             onCreate={(keyword) => {
               setComposerKeyword(keyword);
@@ -947,6 +949,7 @@ function App() {
                 <span>Completed</span>
               </div>
             ))}
+            <AiConnections />
             <div className="info-block">
               <CircleHelp size={20} />
               <p>

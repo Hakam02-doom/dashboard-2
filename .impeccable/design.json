@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-14T07:45:14.716049+00:00",
+  "generatedAt": "2026-09-23T16:57:59.943271+00:00",
   "title": "Design System: Uplift AI Dashboard",
   "extensions": {
     "colorMeta": {
@@ -248,6 +248,10 @@
       {
         "name": "mobile-max",
         "value": "560px"
+      },
+      {
+        "name": "ai-planning-stack-max",
+        "value": "650px"
       }
     ],
     "surfaces": {
@@ -268,9 +272,39 @@
         "src/ContentSections.jsx",
         "src/ResearchSections.jsx",
         "src/sections.css",
-        "src/content-data.js"
+        "src/content-data.js",
+        "src/AiWorkspace.jsx",
+        "src/AiPromptResearch.jsx",
+        "src/ai-prompt-data.js",
+        "src/ai-research.css",
+        "src/theme.css",
+        "src/AiInsights.jsx",
+        "src/AiVisibilityReport.jsx",
+        "src/ai-visibility-report.css",
+        "src/ai-insights-data.js"
       ],
-      "shippingRasters": []
+      "shippingRasters": [],
+      "aiPlanningReview": [
+        ".impeccable/review/desktop.png",
+        ".impeccable/review/desktop-light.png",
+        ".impeccable/review/mobile.png",
+        ".impeccable/review/settings-desktop.png",
+        ".impeccable/review/settings-mobile.png",
+        ".impeccable/review/editor-light.png"
+      ],
+      "aiVisibilityStructureReference": [
+        ".impeccable/review/ai-structure/reference/frame-01.jpg",
+        ".impeccable/review/ai-structure/reference/frame-03.jpg",
+        ".impeccable/review/ai-structure/reference/frame-06.jpg"
+      ],
+      "aiVisibilityStructureReview": [
+        ".impeccable/review/ai-structure/desktop.png",
+        ".impeccable/review/ai-structure/dark.png",
+        ".impeccable/review/ai-structure/mobile.png",
+        ".impeccable/review/ai-structure/drawer-desktop.png",
+        ".impeccable/review/ai-structure/drawer-dark.png",
+        ".impeccable/review/ai-structure/drawer-mobile.png"
+      ]
     },
     "sectionAppendix": {
       "scope": [
@@ -299,7 +333,7 @@
         "composer": "Shared native dialog; calendar prepopulates date, keyword action prepopulates title/keyword; save creates a local session record.",
         "research": "Five source keywords with search/lower-difficulty filter; AI baseline and source date; readiness unscored; fresh scans require connected workspace."
       },
-      "dataContract": "Added sample records and schedules are illustrative. Research snapshots are historical. Decorative mini-charts are not performance history. No backend, persistence, content generation, or live publishing is configured."
+      "dataContract": "Added sample records and schedules are illustrative. Research snapshots are historical. Decorative mini-charts are not performance history. Content generation and live publishing are not configured. The AI visibility database is provisioned; app authentication, cloud sync, collection, and scheduling remain unconnected. Original composer changes are session-only; the AI prompt library has separate browser-local persistence as recorded in aiPlanning."
     },
     "appearance": {
       "source": "src/theme.css",
@@ -341,6 +375,64 @@
         "--d2-chart-planned": "#687388"
       },
       "lightValues": "Original per-component CSS fallbacks; layout and typography unchanged."
+    },
+    "aiPlanning": {
+      "stage": "Local website intake and AI Insights foundation; existing Dashboard 2 visual system preserved. Supabase schema provisioned with RLS; app authentication/cloud sync, collection, scheduling, and deployment remain pending.",
+      "navigation": {
+        "AI Insights": [
+          "Visibility",
+          "Mentions & citations",
+          "Sentiment",
+          "Sources",
+          "Topics",
+          "Query fanout",
+          "Location"
+        ],
+        "Research": [
+          "Prompt library",
+          "Keyword Discovery"
+        ],
+        "Evidence": [
+          "Citation Tracker",
+          "Share of Voice",
+          "Overview"
+        ],
+        "Improve": [
+          "AI Opportunities",
+          "Content Scorecard",
+          "Content Gaps"
+        ],
+        "Traffic": [
+          "AI Traffic"
+        ]
+      },
+      "patterns": "Soft summary panel, two real local counts, connection disclosure, inline editor, status filters, search/topic toolbar, horizontally contained table, native Settings disclosures.",
+      "storageKey": "d2-ai-prompt-library-v1:<domain>",
+      "behavior": "Save curated suggestions or up to 30 questions, edit, prevent duplicates, filter by topic/search, archive/restore, export saved and archived rows as CSV.",
+      "boundary": "Business context and prompts stay on this device. Original global prompt key remains untouched. Normal Insights measurements are empty; opt-in synthetic records drive labelled previews, filters, evidence and JSON export. Synthetic data never writes to the backend.",
+      "connectors": [
+        "Website reader: Working locally",
+        "Supabase: Backend provisioned; sign-in/cloud sync unconnected",
+        "AI answer collection: Account needed",
+        "Analysis model: Later connection",
+        "Scheduled collection: Not scheduled",
+        "Optional and unconnected: GA4, Search Console, website request logs, CMS publishing"
+      ],
+      "theme": "Every new --d2-* reference has a light fallback because semantic declarations are dark-only.",
+      "responsive": "At 650px and below, connection disclosure becomes a full-width row; editor fields and toolbar stack. Existing shell and contained table scrolling remain.",
+      "monitoringDirection": "Independent monitoring, initially Uplift AI; Searchable supplies feature and composition references only. Dashboard 2 owns the aesthetic. Live collection still needs authorized engine access and a budget. Record engine, method, and capture time; distinguish API responses from consumer search results.",
+      "businessStorageKey": "d2-ai-businesses-v1",
+      "insightsLayout": "Website intake uses a 1.6:1 two-panel grid; non-Visibility analysis uses 1.18:1. These grids stack at 1000px. At 650px panels use 21px padding and filters form two columns. Visibility has its own equal two-column report grid, recorded in visibilityReport. Soft panels, Inter, lavender actions and existing light/dark roles remain. Sentiment bars scale proportionally from zero with visible counts.",
+      "visibilityReport": {
+        "authority": "User video structure, adapted to existing Dashboard 2 material and palette; no new design tokens.",
+        "toolbar": "Find brand, Learn, Export; seven existing AI Insights tabs retained.",
+        "filters": "Brand, date and daily/weekly cadence separated from prompt type, model, topic and location.",
+        "layout": "Equal two-by-two grid: Visibility and Rankings above Avg position and Share of voice; 22px gutter, compact 14px headings and 27px values. Trend SVGs respond to container width with 12px axis labels.",
+        "behavior": "Visibility bars/trend toggle with optional comparison lines; brand selection; rankings sortable by visibility, share of voice, sentiment and average position; position trend/table toggle; share-of-voice donut/trend toggle.",
+        "details": "Native right-aligned dialog, width min(1440px, 84vw), 16px insets; three-metric brand summary, comparison trend, searchable sortable comparison table.",
+        "responsive": "At 900px report panels stack and dialog uses 10px viewport insets. At 650px toolbar wraps and filters form two columns. Tables scroll within their containers.",
+        "boundary": "Six synthetic preview brands with visible sample disclosure; normal measurements remain empty. No live collection or backend write is implied. Website-first intake is unchanged."
+      }
     }
   },
   "components": [
@@ -373,7 +465,7 @@
       "kind": "input",
       "refersTo": "input-search",
       "description": "Search title and type in the list view.",
-      "html": "<label class=\"ds-search\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input aria-label=\"Search content\" placeholder=\"Search content…\"></label>",
+      "html": "<label class=\"ds-search\"><svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input aria-label=\"Search content\" placeholder=\"Search content\u2026\"></label>",
       "css": ".ds-search{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:flex;align-items:center;gap:10px;background:#f1f3f7;padding:10px 15px;border-radius:10px;color:#8990a1;max-width:380px}.ds-search input{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;border:0;background:transparent;min-width:0;flex:1;font-size:12px;color:var(--ink,#282c36);caret-color:var(--purple,#6363ac)}.ds-search input::placeholder{color:#70788b}.ds-search input:focus-visible{outline:3px solid #7d7ccd;outline-offset:6px} @media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
     },
     {
@@ -397,7 +489,7 @@
       "kind": "card",
       "refersTo": "content-card",
       "description": "Opens the content dialog; readable title and wrapping metadata reflect the final review fix.",
-      "html": "<button class=\"ds-card\"><h3>Allergen labeling best practices</h3><p>SEO article</p><div class=\"ds-meta\"><span>Sep 14, 2026, 08:00 AM</span><span>LunchLink · Scheduled</span></div></button>",
+      "html": "<button class=\"ds-card\"><h3>Allergen labeling best practices</h3><p>SEO article</p><div class=\"ds-meta\"><span>Sep 14, 2026, 08:00 AM</span><span>LunchLink \u00b7 Scheduled</span></div></button>",
       "css": ".ds-card{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;transition:background .18s ease,box-shadow .18s ease,color .18s ease;width:270px;text-align:left;border:1px solid #edf0f3;border-radius:16px;padding:13px 11px;background:transparent;color:var(--ink,#282c36);cursor:pointer}.ds-card:hover{background:#fff;border-color:#dddfef}.ds-card:focus-visible{outline:3px solid #7d7ccd;outline-offset:4px}.ds-card h3{margin:0;font-size:12px;line-height:1.45;letter-spacing:-.25px;font-weight:500;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.ds-card p{margin:3px 0 0;font-size:10px;color:#68717e}.ds-meta{border-top:1px dashed #e1e6ed;margin-top:12px;padding-top:11px;display:flex;flex-direction:column;gap:8px;color:#68717e;font-size:10px;line-height:1.5} @media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
     },
     {
@@ -407,6 +499,20 @@
       "description": "Primary tonal container for overview and detail surfaces.",
       "html": "<section class=\"ds-panel\"><h2>Content production</h2><p>Illustrative activity</p></section>",
       "css": ".ds-panel{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;background:var(--panel,rgba(255,255,255,.79));border-radius:var(--radius,20px);padding:22px 24px 14px;color:var(--ink,#282c36);min-width:240px}.ds-panel h2{margin:0;font-size:15px;font-weight:500;letter-spacing:-.45px}.ds-panel p{margin:18px 0 0;color:#68717e;font-size:10px} @media(prefers-reduced-motion:reduce){button,input{transition:none!important;animation:none!important}}"
+    },
+    {
+      "name": "Prompt question field",
+      "kind": "input",
+      "description": "Inline planning editor field with explicit light fallbacks and the existing dark semantic roles.",
+      "html": "<label class=\"ds-prompt\">Questions<textarea rows=\"3\" placeholder=\"Enter one question per line\u2026\"></textarea></label>",
+      "css": ".ds-prompt{display:grid;gap:9px;font:14px Inter,sans-serif;color:var(--d2-text,#292d38)}.ds-prompt textarea{font:inherit;line-height:1.6;padding:12px 14px;border:1px solid var(--d2-line,#e3e5ee);border-radius:12px;background:var(--d2-surface-muted,#f0eff7);color:var(--d2-text,#292d38);resize:vertical}.ds-prompt textarea:focus-visible{outline:2px solid var(--d2-focus,#7770b8);outline-offset:3px}@media(min-width:851px){.ds-prompt textarea{font-size:16px}}"
+    },
+    {
+      "name": "Connector setup disclosure",
+      "kind": "custom",
+      "description": "Per-service availability in Settings, with native expandable details and explicit remaining setup.",
+      "html": "<details class=\"ds-connector\"><summary><span>Supabase</span><span>Backend provisioned</span></summary><p>Dedicated Dashboard 2 project created with row-level security. App sign-in and cloud synchronization are not connected yet; your current business and prompt library still stay on this device.</p></details>",
+      "css": ".ds-connector{font-family:Inter,sans-serif;color:var(--d2-text,#292d38);padding:20px 0;border-bottom:1px solid var(--d2-line,#e3e5ee)}.ds-connector summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}.ds-connector summary span:last-child{font-size:12px;color:var(--d2-muted,#626d7c)}.ds-connector summary:focus-visible{outline:2px solid var(--d2-focus,#7770b8);outline-offset:4px}.ds-connector p{font-size:14px;line-height:1.7;color:var(--d2-muted,#626d7c);margin-top:14px;max-width:70ch}@media(max-width:650px){.ds-connector summary{align-items:start}.ds-connector summary span:last-child{text-align:right}}"
     }
   ],
   "narrative": {
@@ -428,6 +534,16 @@
         "name": "The Overlay Depth Rule",
         "body": "Reserve substantial shadow and backdrop blur for content that floats over the workspace.",
         "section": "elevation"
+      },
+      {
+        "name": "The Local Evidence Rule",
+        "body": "Keep local business context, planning counts, historical snapshots, synthetic previews, and collected measurements visibly distinct. Default AI Insights to empty until answer evidence exists. Saving a question does not collect AI answers, register monitoring, or create a live connection.",
+        "section": "components"
+      },
+      {
+        "name": "The Theme Fallback Rule",
+        "body": "New AI research and connector styles consume the existing dark-only `--d2-*` semantic roles with an explicit light fallback at every reference. Preserve the incumbent Inter, lavender actions, soft panels, and unchanged shell in both appearances.",
+        "section": "components"
       }
     ],
     "dos": [
