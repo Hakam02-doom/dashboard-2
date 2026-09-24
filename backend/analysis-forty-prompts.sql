@@ -10,7 +10,7 @@ begin
  select * into job from public.ai_analysis_jobs where owner_id=account_id order by created_at desc limit 1;
  if found and job.domain=website_domain and (job.status in ('queued','running') or job.status='complete' and job.target=40) then return to_jsonb(job);end if;
  if (select analysis from public.ai_collection_budget where id=true)+84>600 then raise exception 'ANALYSIS_BUDGET_LOW';end if;
- if (select count(*) from public.ai_analysis_jobs where owner_id=account_id and created_at>now()-interval '24 hours')>=3 then raise exception 'DAILY_VISITOR_LIMIT';end if;
+ if (select count(*) from public.ai_analysis_jobs where owner_id=account_id and created_at>now()-interval '24 hours' and not (status='failed' and progress=0 and not exists(select 1 from public.ai_analysis_requests r where r.job_id=ai_analysis_jobs.id)))>=3 then raise exception 'DAILY_VISITOR_LIMIT';end if;
  if (select count(*) from public.ai_analysis_jobs where visitor_hash=visitor and created_at>now()-interval '24 hours')>=10 then raise exception 'DAILY_NETWORK_LIMIT';end if;
  if (select count(*) from public.ai_analysis_jobs where status in ('queued','running'))>=100 then raise exception 'QUEUE_FULL';end if;
  update public.ai_analysis_jobs set status='failed',stage='Replaced by a new website',error='Replaced by a new website',lease=null,lease_until=null,updated_at=now()
