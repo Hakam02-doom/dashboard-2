@@ -3,6 +3,10 @@
 
 @media (min-width: 561px) {
   .sidebar {
+    box-sizing: border-box;
+    height: 100dvh;
+    padding-block: 24px;
+    justify-content: safe center;
     transition: flex-basis 220ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .sidebar > .brand {
