@@ -209,6 +209,11 @@
 .ip-empty p {
   max-width: 42ch;
 }
+.ip-empty-compact {
+  min-height: 132px;
+  padding: 22px;
+}
+.ip-empty-compact p { margin: 0; }
 .ip-note {
   font-size: 12px;
   line-height: 1.6;
@@ -330,12 +335,13 @@
   gap: 32px;
   align-items: center;
 }
-.ip-perception svg {
+.ip-perception > div:first-child > svg {
   width: 150px;
   height: 150px;
   display: block;
   margin: auto;
 }
+.ip-perception > div { min-width: 0; }
 .ip-perception text {
   font-size: 25px;
   fill: var(--d2-text, #292d38);
@@ -356,6 +362,11 @@
   margin: 0 0 8px;
   font-size: 13px;
   line-height: 1.7;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 .ip-perception blockquote button {
   font-size: 11px;
@@ -364,6 +375,24 @@
   border: 0;
   color: var(--d2-purple-ink, #7c71b6);
 }
+.ip-perception blockquote button svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+.ip-sentiment-distribution { display: grid; gap: 17px; padding: 20px 2px 11px; }
+.ip-sentiment-bar { display: flex; height: 24px; width: 100%; overflow: hidden; border-radius: 999px; background: var(--d2-track, #d9dce8); }
+.ip-sentiment-bar span + span { border-left: 3px solid var(--d2-surface, #fff); }
+.ip-sentiment-positive { background: var(--ip-green); }
+.ip-sentiment-neutral { background: var(--d2-purple-ink, #7c71b6); }
+.ip-sentiment-negative { background: var(--ip-amber, #d4a767); }
+.ip-sentiment-breakdown { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.ip-sentiment-breakdown > div { display: grid; gap: 6px; padding: 10px 11px; border: 1px solid var(--d2-line, #e5e7ef); border-radius: 10px; min-width: 0; }
+.ip-sentiment-breakdown span { display: flex; gap: 7px; align-items: center; color: var(--d2-muted, #697386); font-size: 11px; }
+.ip-sentiment-breakdown i { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.ip-sentiment-breakdown strong { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ip-sentiment-breakdown small { color: var(--d2-muted, #697386); font-size: 11px; font-weight: 400; }
+.ip-sentiment-distribution > p { margin: 0; color: var(--d2-muted, #697386); font-size: 11px; }
 .ip-headtohead {
   display: flex;
   justify-content: space-between;
@@ -412,7 +441,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  min-height: 270px;
+  min-height: 170px;
   align-content: stretch;
 }
 .ip-treemap button {

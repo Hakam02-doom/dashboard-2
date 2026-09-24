@@ -273,6 +273,25 @@ function Chart({ series, mode = 0, percent = false, onPoint }) {
     </div>
   );
 }
+function SentimentDistribution({ summary }) {
+  const labels = ["Positive", "Neutral", "Negative"];
+  return (
+    <div className="ip-sentiment-distribution" aria-label={`${summary.count} assessed mentions: ${summary.counts.map((count, index) => `${count} ${labels[index].toLowerCase()}`).join(", ")}`}>
+      <div className="ip-sentiment-bar" role="img" aria-label="Share of assessed mentions by sentiment">
+        {summary.counts.map((count, index) => count > 0 && <span key={labels[index]} className={`ip-sentiment-${labels[index].toLowerCase()}`} style={{ width: `${count / summary.count * 100}%` }} />)}
+      </div>
+      <div className="ip-sentiment-breakdown">
+        {summary.counts.map((count, index) => (
+          <div key={labels[index]}>
+            <span><i className={`ip-sentiment-${labels[index].toLowerCase()}`} />{labels[index]}</span>
+            <strong>{count}<small> / {summary.count}</small></strong>
+          </div>
+        ))}
+      </div>
+      <p>Based on {summary.count} assessed {summary.count === 1 ? "mention" : "mentions"} in this selection.</p>
+    </div>
+  );
+}
 function Brand({ name, business, rows }) {
   return (
     <span className="ip-brand">
@@ -544,6 +563,7 @@ function SentimentPage({
       quote: r.brandAssessment?.[brand]?.sentimentEvidence,
     }))
     .filter((r) => r.quote);
+  const scoreBuckets = bucketRows(selected, cadence);
   return (
     <>
       <Card
@@ -631,7 +651,7 @@ function SentimentPage({
                 <blockquote key={i}>
                   <p>{q.quote}</p>
                   <button onClick={() => onAnswer(q.row)}>
-                    {q.row.engine} · Read answer <ArrowUpRight size={12} />
+                    {q.row.engine} · Read answer <ArrowUpRight size={13} aria-hidden="true" />
                   </button>
                 </blockquote>
               ))
@@ -646,27 +666,27 @@ function SentimentPage({
       <div className="ip-grid">
         <Card
           title="Sentiment Score"
-          note="Brand sentiment over time"
-          actions={<Switch value={mode} onChange={setMode} />}
+          note={scoreBuckets.length > 1 ? "Brand sentiment over time" : "How assessed mentions feel about your brand"}
+          actions={scoreBuckets.length > 1 && <Switch value={mode} onChange={setMode} />}
           footer="Positive = 100 · Neutral = 50 · Negative = 0; unassessed excluded"
         >
           <div className="ip-stat">
             <span>Sentiment score</span>
-            <strong>{num(sentimentData(relevant).score)}</strong>
+            <strong>{num(summary.score)}</strong>
           </div>
-          <Chart
+          {scoreBuckets.length > 1 ? <Chart
             percent
             mode={mode}
             series={[
               {
                 name: "Sentiment",
-                points: bucketRows(relevant, cadence).map(([date, rs]) => ({
+                points: scoreBuckets.map(([date, rs]) => ({
                   date,
                   value: sentimentData(rs).score,
                 })),
               },
             ]}
-          />
+          /> : summary.count ? <SentimentDistribution summary={summary} /> : <div className="ip-empty ip-empty-compact"><p>No assessed sentiment yet. Scores appear when collected answers mention this brand and have sentiment evidence.</p></div>}
         </Card>
         <Card
           title="Head-to-Head"
@@ -758,7 +778,7 @@ function SentimentPage({
           icon={Layers}
           note="What AI says about the selected brand"
           actions={
-            <Switch
+            labels.length > 0 && <Switch
               value={attrMode}
               onChange={setAttrMode}
               labels={["Attribute treemap", "Attribute list"]}
@@ -766,7 +786,7 @@ function SentimentPage({
           }
           footer={`${labels.length} attributes · sized by supporting excerpts`}
         >
-          <div className={attrMode ? "ip-attribute-list" : "ip-treemap"}>
+          {labels.length > 0 && <div className={attrMode ? "ip-attribute-list" : "ip-treemap"}>
             {labels.map((l) => {
               const matches = attrs.filter((a) => a.label === l),
                 positive = matches.filter(
@@ -802,12 +822,9 @@ function SentimentPage({
                 </button>
               );
             })}
-          </div>
+          </div>}
           {!labels.length && (
-            <Empty>
-              Analyze collected descriptions to extract attributes with quoted
-              evidence.
-            </Empty>
+            <div className="ip-empty ip-empty-compact"><Layers size={18} /><p>No supported attributes extracted yet. Use “Analyze descriptions” above to find them in collected answers.</p></div>
           )}
         </Card>
         <Card
@@ -819,9 +836,9 @@ function SentimentPage({
               <span>
                 {verified} of {facts.length} reviewed
               </span>
-              <button onClick={() => setShowAll(!showAll)}>
+              {facts.length > 4 && <button onClick={() => setShowAll(!showAll)}>
                 {showAll ? "Show fewer" : `Show all ${facts.length}`}
-              </button>
+              </button>}
             </>
           }
         >
@@ -851,14 +868,11 @@ function SentimentPage({
             ))}
           </div>
           {!facts.length && (
-            <Empty>
-              No extracted claims yet. Analyze descriptions to prepare facts for
-              review.
-            </Empty>
+            <div className="ip-empty ip-empty-compact"><Check size={18} /><p>No claims extracted yet. Use “Analyze descriptions” above to prepare facts for review.</p></div>
           )}
-          <p className="ip-note">
+          {facts.length > 0 && <p className="ip-note">
             Your review is saved here; it does not change an external AI answer.
-          </p>
+          </p>}
         </Card>
       </div>
     </>
