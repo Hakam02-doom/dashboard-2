@@ -4,7 +4,7 @@ const records = [
   ['netflix.com', '#e50914', ['Netflix'], 'netflix.png'],
   ['disneyplus.com', '#02d6e8', ['Disney+', 'Disney Plus'], 'disney-plus.jpg'],
   ['primevideo.com', '#00a8e1', ['Amazon Prime Video', 'Prime Video'], 'prime-video.png'],
-  ['tv.apple.com', '#ffffff', ['Apple TV+', 'Apple TV'], 'apple-tv.png'],
+  ['tv.apple.com', '#8891a5', ['Apple TV+', 'Apple TV'], 'apple-tv.png'],
   ['hbomax.com', '#7050ef', ['HBO Max', 'Max', 'Max (HBO)', 'Max (formerly HBO Max)'], 'hbo-max.png'],
   ['hulu.com', '#1ce783', ['Hulu', 'Hulu + Live TV', 'Hulu (with ads)'], 'hulu.png'],
   ['tubitv.com', '#fafa00', ['Tubi'], 'tubi.png'],
