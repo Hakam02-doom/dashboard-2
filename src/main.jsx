@@ -335,7 +335,7 @@ function App() {
   const { preference, dark, setPreference } = useAppearance();
   const [sidebarExpanded, setSidebarExpanded] = useState(readSidebarPreference),
     [mobileMenu, setMobileMenu] = useState(false),
-    [view, setView] = useState(() => { try { return localStorage.getItem("d2-ai-return") ? "AI visibility" : "Dashboard"; } catch { return "Dashboard"; } }),
+    [view, setView] = useState(() => { try { return localStorage.getItem("d2-ai-return") || localStorage.getItem("d2-last-view") === "AI visibility" ? "AI visibility" : "Dashboard"; } catch { return "Dashboard"; } }),
     [period, setPeriod] = useState("Month"),
     [offset, setOffset] = useState(0),
     [selected, setSelected] = useState(null),
@@ -350,6 +350,13 @@ function App() {
     [composerKeyword, setComposerKeyword] = useState(""),
     [website, setWebsite] = useState("LunchLink"),
     [noticeRead, setNoticeRead] = useState(false);
+  useEffect(() => {
+    try {
+      if (view === "AI visibility") localStorage.setItem("d2-last-view", view);
+      else localStorage.removeItem("d2-last-view");
+    } catch {}
+  }, [view]);
+
   const dialog = useRef(null),
     popRef = useRef(null);
   useEffect(() => {

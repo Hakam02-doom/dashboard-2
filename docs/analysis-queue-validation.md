@@ -47,3 +47,13 @@ The new reset function and budget table were verified inaccessible to public
 roles. The initial Vercel deployment was blocked by the local Git author email;
 the repository author was changed to the primary verified email shown in the
 authenticated GitHub account settings before redeployment.
+
+Live bounded validation (no report data retained): generated 100 valid Nike buyer
+prompts in 22.861s, including two rejected intent batches repaired on continuation.
+Eight fresh web searches plus eight separate evidence assessments completed in
+24.666s more (47.527s total), with 61 distinct cited URLs. All eight answers had
+assessments. The test consumed 22 reservations; a preliminary planning-only attempt
+consumed four. Shared total is now 443 reservations ($22.15 reserved, $2.85 left).
+This is not a 100-answer latency claim. Production browser checks confirmed the
+current Instagram report survives reopening and the change-site screen has no
+website-history list. The AI Visibility section itself now persists on refresh.
