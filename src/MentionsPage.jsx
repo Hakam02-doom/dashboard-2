@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import {
-  Activity, BarChart3, Download, Eye, Filter, Hash, Link2, Search,
+  Activity, BarChart3, Download, Eye, Filter, Hash, LayoutGrid, Link2, Search,
 } from "lucide-react";
 import { BrandLogo } from "./BrandLogo";
 import { resolveBrandDomain } from "./brand-domains";
@@ -53,8 +53,8 @@ function Card({ title, subtitle, icon: Icon, actions, footer, className = "", ch
 
 function ViewSwitch({ value, onChange, label }) {
   return <div className="mp-view-switch" role="group" aria-label={label}>
-    <button type="button" aria-label={`${label} line chart`} aria-pressed={value === "line"} onClick={() => onChange("line")}><Activity size={15}/></button>
-    <button type="button" aria-label={`${label} bar chart`} aria-pressed={value === "bar"} onClick={() => onChange("bar")}><BarChart3 size={15}/></button>
+    <button type="button" aria-label={`${label} overview`} title="Answer overview" aria-pressed={value === "overview"} onClick={() => onChange("overview")}><LayoutGrid size={15}/></button>
+    <button type="button" aria-label={`${label} trend`} title="Daily trend" aria-pressed={value === "trend"} onClick={() => onChange("trend")}><Activity size={15}/></button>
   </div>;
 }
 
@@ -84,6 +84,34 @@ function TrendChart({ series, mode }) {
       {dates.filter((_,i) => dates.length <= 7 || i === 0 || i === dates.length-1 || i === Math.floor(dates.length/2)).map((d) => <text key={d} x={x(dates.indexOf(d))} y="218" textAnchor="middle">{timeLabel(d)}</text>)}
     </svg>
     {series.length > 1 && <div className="mp-chart-legend">{series.map((item,index) => <span key={item.name}><i className={index ? "citation" : "mention"}/>{item.name}</span>)}</div>}
+  </div>;
+}
+
+function MentionCoverage({ rows, brand, onAnswer }) {
+  if (!rows.length) return <div className="mp-chart-empty">No measured answers in this period.</div>;
+  const measured = rows.filter((row) => typeof row.mentioned === "boolean");
+  const mentioned = measured.filter((row) => row.mentioned).length;
+  const rate = measured.length ? Math.round(mentioned / measured.length * 100) : null;
+  const columns = Math.min(20, Math.max(8, Math.ceil(Math.sqrt(rows.length * 2))));
+  return <div className="mp-coverage">
+    <div className="mp-coverage-summary"><strong>{rate === null ? "—" : `${rate}%`}</strong><div><b>Answer visibility</b><span>{mentioned} of {measured.length} assessed answers mention {brand}</span></div></div>
+    <div className="mp-coverage-grid" style={{"--mp-coverage-columns": columns}} role="group" aria-label={`${mentioned} of ${measured.length} assessed answers mention ${brand}`}>
+      {rows.map((row, index) => <button key={row.id || `${row.prompt}-${index}`} type="button" className={row.mentioned === true ? "is-mentioned" : row.mentioned === false ? "is-missing" : "is-pending"} aria-label={`${row.prompt || `Answer ${index + 1}`}: ${row.mentioned === true ? "mentioned" : row.mentioned === false ? "not mentioned" : "not assessed"}. View answer`} title={`${row.prompt || `Answer ${index + 1}`} · ${row.mentioned === true ? "Mentioned" : row.mentioned === false ? "Not mentioned" : "Not assessed"}`} onClick={() => onAnswer(row)} />)}
+    </div>
+    <div className="mp-coverage-legend"><span><i className="is-mentioned"/>Mentioned</span><span><i className="is-missing"/>Not mentioned</span>{measured.length < rows.length && <span><i className="is-pending"/>Not assessed</span>}</div>
+  </div>;
+}
+
+function CitationCoverage({ rows, brand }) {
+  const assessed = rows.filter((row) => typeof row.cited === "boolean");
+  if (!assessed.length) return <div className="mp-chart-empty">No answers have a verified citation assessment yet.</div>;
+  const mentioned = assessed.filter((row) => row.mentioned === true).length;
+  const cited = assessed.filter((row) => row.cited === true).length;
+  const uncitedMentions = assessed.filter((row) => row.mentioned === true && row.cited === false).length;
+  const mentionRate = mentioned / assessed.length * 100, citationRate = cited / assessed.length * 100;
+  return <div className="mp-citation-overview">
+    <div className="mp-citation-rings" style={{"--mp-mention-angle": `${mentionRate * 3.6}deg`, "--mp-citation-angle": `${citationRate * 3.6}deg`}} role="img" aria-label={`${brand} is mentioned in ${mentioned} of ${assessed.length} assessed answers and its website is cited in ${cited} of ${assessed.length}`}><div className="mp-citation-ring-inner"><strong>{Math.round(citationRate)}%</strong><span>cited</span></div></div>
+    <div className="mp-citation-details"><div><span className="mp-detail-dot mention"/><span>Brand mentioned</span><strong>{mentioned}<small> / {assessed.length}</small></strong></div><div><span className="mp-detail-dot citation"/><span>Website cited</span><strong>{cited}<small> / {assessed.length}</small></strong></div><div className="mp-citation-gap"><span>Mentioned without a citation</span><strong>{uncitedMentions}</strong></div></div>
   </div>;
 }
 
@@ -181,8 +209,8 @@ function ResponseTable({ rows, business, brand, onAnswer, onDetail }) {
 }
 
 export function MentionsPage({ rows, prior = [], business, brand, cadence, plan, annotations = {}, onDetail, onAnswer }) {
-  const [mentionMode,setMentionMode] = useState("line");
-  const [citationMode,setCitationMode] = useState("line");
+  const [mentionMode,setMentionMode] = useState("overview");
+  const [citationMode,setCitationMode] = useState("overview");
   const [merged,setMerged] = useState(false);
   const [heatmap,setHeatmap] = useState("percentage");
   const own = brandRows(rows,brand,business.name);
@@ -190,7 +218,7 @@ export function MentionsPage({ rows, prior = [], business, brand, cadence, plan,
   const counts = bucketRows(own,cadence);
   const series = (field,name) => ({name,points:counts.map(([date,items])=>[date,items.filter((r)=>r[field]).length])});
   const mentions = own.filter((r)=>r.mentioned).length;
-  const citations = brand===business.name ? own.filter((r)=>r.cited).length : null;
+  const citations = brand===business.name && own.some((r)=>typeof r.cited === "boolean") ? own.filter((r)=>r.cited === true).length : null;
   const delta = (field) => before.length ? own.filter((r)=>r[field]).length-before.filter((r)=>r[field]).length : null;
   const top = reportMetrics(rows,business.name).slice(0,10).map((item)=>item.name);
   if (!top.includes(business.name)) top.push(business.name);
@@ -204,19 +232,20 @@ export function MentionsPage({ rows, prior = [], business, brand, cadence, plan,
   });
   const coverage = stages.reduce((n,stage)=>n+stage.items.length,0);
   const days = unique(own.map((r)=>r.at?.slice(0,10))).length;
+  const combined = merged && days > 1 && mentionMode === "trend";
   return <div className="mp-page">
     <div className="mp-grid">
-      <Card title="Mentions" icon={Eye} subtitle="Your brand’s mention trend over time across LLMs" className={merged ? "mp-wide":""}
-        actions={<ViewSwitch label="Mentions" value={mentionMode} onChange={setMentionMode}/>}
-        footer={<><span>{days ? `Showing collected data for ${days} ${days===1?"day":"days"}`:"No collected dates"}</span>{merged&&<button onClick={()=>setMerged(false)}>Split charts</button>}</>}>
+      <Card title="Mentions" icon={Eye} subtitle={days < 2 || mentionMode === "overview" ? "Which measured answers mention your brand" : "Your brand’s mention trend over time across LLMs"} className={combined ? "mp-wide":""}
+        actions={days > 1 && <ViewSwitch label="Mentions" value={mentionMode} onChange={(mode)=>{setMentionMode(mode);if(mode==="overview")setMerged(false);}}/>}
+        footer={<><span>{days ? `Showing collected data for ${days} ${days===1?"day":"days"}`:"No collected dates"}</span>{combined&&<button onClick={()=>setMerged(false)}>Split charts</button>}</>}>
         <div className="mp-stat"><span>Total Mentions</span><div><strong>{mentions}</strong>{delta("mentioned")!==null&&<small className={delta("mentioned")>=0 ? "up":"down"}>{delta("mentioned")>0?"+":""}{delta("mentioned")} vs previous period</small>}</div></div>
-        <TrendChart mode={mentionMode} series={merged ? [series("mentioned","Mentions"),series("cited","Citations")] : [series("mentioned","Mentions")]}/>
+        {mentionMode === "overview" || days < 2 ? <MentionCoverage rows={own} brand={brand} onAnswer={onAnswer}/> : <TrendChart mode="line" series={combined ? [series("mentioned","Mentions"),series("cited","Citations")] : [series("mentioned","Mentions")]}/>}
       </Card>
-      {!merged&&<Card title="Citations" icon={Link2} subtitle="Linked sources in AI responses across LLMs"
-        actions={<ViewSwitch label="Citations" value={citationMode} onChange={setCitationMode}/>}
-        footer={<><span>{brand===business.name ? `Showing collected data for ${days} ${days===1?"day":"days"}`:"Citation attribution is available for your brand"}</span>{brand===business.name&&<button onClick={()=>setMerged(true)}>Merge with Mentions</button>}</>}>
+      {!combined&&<Card title="Citations" icon={Link2} subtitle={days < 2 || citationMode === "overview" ? "How often AI links to your website" : "Linked sources in AI responses across LLMs"}
+        actions={days > 1 && brand===business.name && <ViewSwitch label="Citations" value={citationMode} onChange={setCitationMode}/>}
+        footer={<><span>{brand===business.name ? `Showing collected data for ${days} ${days===1?"day":"days"}`:"Citation attribution is available for your brand"}</span>{brand===business.name&&days>1&&citationMode==="trend"&&<button onClick={()=>{setMerged(true);setMentionMode("trend");}}>Merge with Mentions</button>}</>}>
         <div className="mp-stat"><span>Total Citations</span><div><strong>{citations===null?"—":citations}</strong>{brand===business.name&&delta("cited")!==null&&<small className={delta("cited")>=0 ? "up":"down"}>{delta("cited")>0?"+":""}{delta("cited")} vs previous period</small>}</div></div>
-        {brand===business.name ? <TrendChart mode={citationMode} series={[series("cited","Citations")]}/> : <div className="mp-chart-empty">The saved answers do not identify competitor-owned citations.</div>}
+        {brand===business.name ? citationMode === "overview" || days < 2 ? <CitationCoverage rows={own} brand={brand}/> : <TrendChart mode="line" series={[series("cited","Citations")]}/> : <div className="mp-chart-empty">The saved answers do not identify competitor-owned citations.</div>}
       </Card>}
       <Card title="Decision Journey" icon={Filter} subtitle="Mention rate by funnel stage across LLMs" footer={<><span>{coverage} of {own.length} responses classified</span><span>Weak → Strong</span></>}>
         <div className="mp-journey">
