@@ -13,6 +13,7 @@
     "prepare": "node scripts/setup-hooks.mjs"
   },
   "dependencies": {
+    "@fontsource/geist-sans": "^5.3.0",
     "@fontsource/inter": "^5.2.5",
     "@supabase/supabase-js": "2.117.1",
     "cheerio": "1.2.0",
