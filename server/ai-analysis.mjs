@@ -21,19 +21,30 @@ export function applyAssessment(row,assessment,names,own,aliases={}){
  const text=evidenceText(row.answer);
  const quotePresent=q=>typeof q==='string'&&q.trim().length>3&&text.includes(evidenceText(q));
  const metrics={};const mentions=[];
+ const visibleText=String(row.answer).replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/https?:\/\/[^\s)]+/g,'').replace(/[*_`#]/g,'').replace(/\s+/g,' ');
+ const excerptFor=identifiers=>{
+  for(const identifier of identifiers){
+   const escaped=String(identifier).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+   const match=new RegExp(`(^|[^\\p{L}\\p{N}])(${escaped})(?=$|[^\\p{L}\\p{N}])`,'iu').exec(visibleText);
+   if(match){const from=Math.max(0,match.index-70),to=Math.min(visibleText.length,match.index+match[0].length+100);return visibleText.slice(from,to).trim();}
+  }
+  return '';
+ };
  const normalized=value=>String(value).normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,'');
  const discovered=Array.isArray(assessment.discoveredBrands)?assessment.discoveredBrands.slice(0,50).filter(b=>typeof b?.name==='string'&&b.name.trim().length>=2&&b.name.length<=80&&quotePresent(b.mentionEvidence)&&namedEvidence(b.mentionEvidence,b.name)&&!names.some(name=>[name,...(aliases[name]||[])].some(alias=>normalized(alias)===normalized(b.name)))):[];
  const allNames=[...names,...new Set(discovered.map(b=>b.name))];
  for(const name of allNames){const b=assessment.brands?.find(b=>b.name===name)||discovered.find(item=>item.name===name);if(!b)continue;
   const identifiers=[name,...(aliases[name]||[])];
   const identifies=q=>identifiers.some(alias=>namedEvidence(q||'',alias));
-  const mentioned=(b.mentioned&&quotePresent(b.mentionEvidence)&&identifies(b.mentionEvidence))||names.includes(name)&&identifiers.some(alias=>!ambiguousBrandName(alias)&&namedEvidence(row.answer,alias));
+  const suppliedFallback=names.includes(name)&&identifiers.some(alias=>!ambiguousBrandName(alias)&&namedEvidence(row.answer,alias))?excerptFor(identifiers):'';
+  const verifiedQuote=quotePresent(b.mentionEvidence)&&identifies(b.mentionEvidence)?b.mentionEvidence:'';
+  const mentioned=b.mentioned&&!!verifiedQuote||!!suppliedFallback;
   const recommended=mentioned&&b.recommended===true&&quotePresent(b.recommendationEvidence)&&identifies(b.recommendationEvidence)?true:b.recommended===false?false:null;
   if(mentioned)mentions.push(name);
   const sentiment=mentioned&&quotePresent(b.sentimentEvidence)?b.sentiment:'Not assessed';
   const rank=mentioned?answerPosition(row.answer,identifiers):null;
   const position=rank?.position??null;
-  metrics[name]={position,sentiment,recommended,recommendationEvidence:recommended?b.recommendationEvidence:'',mentionEvidence:mentioned?(quotePresent(b.mentionEvidence)?b.mentionEvidence:name):'',sentimentEvidence:sentiment!=='Not assessed'?b.sentimentEvidence:'',positionEvidence:rank?.evidence||''};
+  metrics[name]={position,sentiment,recommended,recommendationEvidence:recommended?b.recommendationEvidence:'',mentionEvidence:mentioned?(verifiedQuote||suppliedFallback):'',sentimentEvidence:sentiment!=='Not assessed'?b.sentimentEvidence:'',positionEvidence:rank?.evidence||''};
  }
  return {...row,assessmentPending:false,mentioned:mentions.includes(own),recommended:metrics[own]?.recommended??null,position:metrics[own]?.position??null,sentiment:metrics[own]?.sentiment||'Not assessed',competitors:mentions.filter(n=>n!==own),trackedCompetitors:allNames.filter(n=>n!==own),competitorMetrics:metrics,brandAssessment:metrics,assessmentAliases:aliases,assessmentMethod:'OpenAI classification with verbatim evidence checks',analysisModel:'gpt-4.1-mini-2025-04-14',comparisonAssessed:allNames.length>1,discoveryComplete:Array.isArray(assessment.discoveredBrands),measurementVersion:4};
 }

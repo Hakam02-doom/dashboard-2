@@ -43,6 +43,15 @@ test('answer-discovered brands have one shared denominator and unsupported names
  assert.equal(ranks.find(b=>b.name==='Puma'),undefined);
 });
 
+test('verified regional mention saves an actual answer excerpt when model omits the quote',()=>{
+ const row={answer:'For beginners, Adidas makes the Duramo and Nike makes the Revolution.',prompt:'Which running shoes suit beginners?',engine:'OpenAI Web Search'};
+ const item={name:'adidas IN',mentioned:false,mentionEvidence:'',recommended:null,recommendationEvidence:'',sentiment:'Not assessed',sentimentEvidence:'',position:null,positionEvidence:''};
+ const checked=applyAssessment(row,{brands:[item],discoveredBrands:[]},['adidas IN'],'adidas IN',{'adidas IN':['Adidas']});
+ assert.equal(checked.mentioned,true);
+ assert.match(checked.brandAssessment['adidas IN'].mentionEvidence,/Adidas makes the Duramo/);
+ assert.ok(row.answer.includes(checked.brandAssessment['adidas IN'].mentionEvidence));
+});
+
 test('branded or repeated generated questions are replaced with distinct category questions',()=>{
  const draft={audience:'Marketing teams',products:['AI visibility software'],questions:Array.from({length:24},(_,i)=>({text:i<12?'Which Searchable products should I buy?':`Which AI visibility tools fit team scenario ${i}?`,intent:['Discovery','Comparison','Buying decisions','Use cases'][Math.floor(i/6)],topic:'AI visibility software'}))};
  const plan=completeBenchmarkPlan(draft,['Searchable Limited','Searchable','Peec AI'],'AI visibility tools');

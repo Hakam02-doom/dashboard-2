@@ -64,7 +64,7 @@ function Rankings({brands,selected,onSelect,colorFor,query='',sort,setSort}) {
 export function AiVisibilityReport({rows,business,period,cadence,selected,setSelected,preview,search,report}) {
   const sources=[...(report?.discovery?.sources||[]),...rows.flatMap(r=>r.sources||[])];
   const brands=reportMetrics(rows,business.name).map(b=>({...b,domain:b.own?business.domain:resolveBrandDomain(b.name,sources,report?.suggestions)})), selectedBrand=brands.find(b=>b.name===selected)||brands.find(b=>b.own);
-  const mixedLists=new Set(rows.map(r=>[...(r.trackedCompetitors||r.competitors||[])].sort().join('|'))).size>1;
+  const mixedLists=new Set(brands.map(b=>b.sampleSize)).size>1;
   const names=[business.name,...[...new Set(rows.flatMap(r=>r.trackedCompetitors||r.competitors||[]))].sort()];
   const colorFor=name=>brandColor(brands.find(b=>b.name===name)||{name});
   const [visibilityView,setVisibilityView]=useState('bars'),[positionView,setPositionView]=useState('chart'),[shareView,setShareView]=useState('donut'),[sort,setSort]=useState({key:'visibility',asc:false});
