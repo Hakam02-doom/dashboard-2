@@ -4,6 +4,7 @@ import React,{useState,useEffect,useRef} from 'react';
 import {Globe2,ArrowRight,Check,ArrowLeft,RefreshCw,Building2} from 'lucide-react';
 import {AiWorkspace} from './AiWorkspace';
 import {BUSINESS_KEY,businessStorageKey,publicWebsite,validBusiness} from './ai-business';
+import {analysisRequest} from './analysis-request.mjs';
 import {generateWebsiteInsights} from './website-insights-flow.mjs';
 import './ai-insights.css';
 
@@ -36,10 +37,7 @@ function AiVisibilityContent(props){
  }).catch(()=>{});return()=>{mounted=false;};},[props.userId]);
 
  async function collect(action,business){
-  const response=await aiFetch('/api/ai/searchapi',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,business}),signal:AbortSignal.timeout(305000)});
-  const data=await response.json();
-  if(!response.ok)throw Error(data.error||'Analysis is temporarily unavailable. Please try again.');
-  return data;
+  return analysisRequest(()=>aiFetch('/api/ai/searchapi',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,business}),signal:AbortSignal.timeout(305000)}),{onWaiting:setStage});
  }
  async function finish(profile){
   if(!validBusiness(profile))throw Error('We could not identify this business. Add its details below to continue.');
@@ -56,9 +54,8 @@ function AiVisibilityContent(props){
   let target;try{target=publicWebsite(url);}catch{setError('Enter a website such as example.com.');return;}
   running.current=true;setBusy(true);setError('');setDraft(null);setStage('Reading your website…');
   try{
-   const response=await aiFetch('/api/ai/website',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:target.href}),signal:AbortSignal.timeout(65000)});
-   const data=await response.json();
-   if(!response.ok||!validBusiness(data.profile))throw Error(data.error||'We could not read the business details from this website.');
+   const data=await analysisRequest(()=>aiFetch('/api/ai/website',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:target.href}),signal:AbortSignal.timeout(65000)}),{onWaiting:setStage});
+   if(!validBusiness(data.profile))throw Error(data.error||'We could not read the business details from this website.');
    await finish(data.profile);
   }catch(e){setError(e.name==='TimeoutError'?'The analysis is taking longer than expected. Your progress is saved; try again to continue.':e.message.startsWith('Unexpected')?'The analysis service did not respond. Please try again.':e.message);}
   finally{running.current=false;setBusy(false);setStage('');}
@@ -79,7 +76,7 @@ function AiVisibilityContent(props){
    <span className="aiv-symbol"><Globe2 size={27}/></span><h3>Start with your website.</h3><p>One link. Your brand, competitors, and AI visibility in one place.</p>
    <form onSubmit={analyze}><label htmlFor="business-website">Business website</label><div className="aiv-url-field"><Globe2 size={19}/><input id="business-website" autoComplete="url" inputMode="url" required maxLength={2048} placeholder="yourbusiness.com" value={url} onChange={e=>{setUrl(e.target.value);setDraft(null);setError('');}} disabled={busy}/></div><p className="aiv-hint">Results are saved for this browser. No account or email needed.</p><button className="cs-button filled" disabled={busy||!url.trim()}>{busy?<><RefreshCw size={16} className="aiv-spin"/>Analyzing website…</>:<>Analyze website<ArrowRight size={16}/></>}</button></form>
    {busy&&<div className="aiv-analysis-progress" role="status" aria-live="polite"><strong>{stage}</strong><p>We’re collecting real answers and checking the evidence. This can take a few minutes.</p></div>}
-   {error&&<div className="aiv-error" role="alert"><p>{error}</p>{!draft&&<button className="ai-text-button" onClick={manual} disabled={busy}>Add business details manually</button>}</div>}
+   {error&&<div className="aiv-error" role="alert"><p>{error}</p>{!draft&&/read|business details|identify|public home page/i.test(error)&&<button className="ai-text-button" onClick={manual} disabled={busy}>Add business details manually</button>}</div>}
    {draft&&<form className="aiv-review" onSubmit={save}><h3>Tell us about the business</h3><label>Business name<input required maxLength={100} value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/></label><label>What your business offers<textarea rows={3} required maxLength={600} value={draft.description} onChange={e=>setDraft({...draft,description:e.target.value})}/></label><button className="cs-button filled" disabled={busy}>Analyze business<ArrowRight size={16}/></button></form>}
    {Object.keys(businesses.profiles).length>0&&<section className="aiv-saved-sites" aria-label="Saved websites"><h3>Your websites</h3><p>Continue with a website you’ve already added.</p><div>{Object.values(businesses.profiles).map(profile=><button type="button" key={profile.domain} className="cs-button" onClick={()=>openSaved(profile)} disabled={busy}><strong>{profile.name}</strong><span>{profile.domain}</span><ArrowRight size={15}/></button>)}</div></section>}
   </div><aside className="panel aiv-intake-aside"><h3>From your website to real insights.</h3><ol>{[['Your business','We read your website to understand what you offer.'],['Your competition','We find brands appearing in the same AI answers.'],['Your visibility','See mentions, sentiment, rankings, and cited sources.']].map(([title,copy])=><li key={title}><Check size={17}/><div><strong>{title}</strong><p>{copy}</p></div></li>)}</ol><div className="aiv-aside-note"><Building2 size={20}/><p>Every score is based on collected answers. Your first report is a starting point you can expand over time.</p></div></aside></div>

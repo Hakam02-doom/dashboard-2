@@ -8,7 +8,7 @@ export const config={maxDuration:60};
 
 export function createWebsiteApiHandler({client=serverClient(process.env),analyze=analyzeWebsite,searchFallback=(url)=>searchWebsiteProfile(url,{client,key:process.env.SEARCHAPI_API_KEY})}={}){
  const send=(res,code,body)=>{res.statusCode=code;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(body));};
- return async function(req,res){
+ const handle=async function(req,res){
   if(req.method!=='POST')return send(res,405,{error:'Use POST.'});
   if(req.headers.origin!=='https://dashboard-2-sandy.vercel.app')return send(res,403,{error:'Open Dashboard 2.'});
   if(!client)return send(res,503,{error:'Website analysis is temporarily unavailable.'});
@@ -22,7 +22,7 @@ export function createWebsiteApiHandler({client=serverClient(process.env),analyz
   const store=cloudCollectorStore(client,user.id);
   let lease;
   try{
-   lease=await store.acquire();if(!lease)return send(res,429,{error:'Another analysis is running. Try again shortly.'});
+   lease=await store.acquire();if(!lease)return send(res,429,{code:'ANALYSIS_BUSY',retryAfter:5,error:'Another analysis is finishing. We’ll continue automatically.'});
    const state=await store.load(),day=new Date().toISOString().slice(0,10),cached=state.websiteProfiles?.[url];
    if(cached&&(cached.source!=='search-results'||cached.searchVersion===2)&&Date.parse(cached.analyzedAt)>Date.now()-86400000)return send(res,200,{profile:cached});
    state.websiteReads ||= {};if((state.websiteReads[day]||0)>=30)return send(res,429,{error:'Daily website-read limit reached.'});
@@ -36,6 +36,12 @@ export function createWebsiteApiHandler({client=serverClient(process.env),analyz
    return send(res,200,{profile});
   }catch(e){return send(res,422,{error:/^(Enter|Use |This |The website|That link)/.test(e.message)?e.message:'We could not read that website. Try its public home page, or enter the business details manually.'});}
   finally{if(lease)await store.release(lease).catch(()=>{});}
+ };
+ // Finish cleanup before the browser can start the dependent collection request.
+ return async (req,res)=>{
+  let body;
+  await handle(req,{setHeader:(name,value)=>res.setHeader(name,value),set statusCode(value){res.statusCode=value;},end(value){body=value;}});
+  res.end(body);
  };
 }
 

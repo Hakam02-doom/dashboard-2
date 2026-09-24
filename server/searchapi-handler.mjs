@@ -43,8 +43,8 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
    if(!business||typeof business.domain!=='string'||!/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(business.domain)||typeof business.name!=='string'||!business.name.trim()||business.name.length>100)return send(400,{error:'Choose a valid business first.'});
    if(action==='scheduleTick'&&!req.internalWorker)return send(403,{error:'Internal worker only.'});
    if(action!=='list'){
-    if(busy)return send(429,{error:'A scan is already running. Please wait for it to finish.'});
-    busy=true;ownsLock=true;leaseToken=await storage.acquire();if(!leaseToken)return send(429,{error:'A collection worker is already running.'});
+    if(busy)return send(429,{code:'ANALYSIS_BUSY',retryAfter:5,error:'Another analysis is finishing. We’ll continue automatically.'});
+    busy=true;ownsLock=true;leaseToken=await storage.acquire();if(!leaseToken)return send(429,{code:'ANALYSIS_BUSY',retryAfter:5,error:'Another analysis is finishing. We’ll continue automatically.'});
    }
    const state=await load();
    const shared=budgetStore?await budgetStore.usage():{search:state.attempts||0,analysis:state.analysisAttempts||0,direct:state.directAttempts||0};

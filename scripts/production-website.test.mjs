@@ -57,3 +57,17 @@ test('blocked sites use bounded, explicitly labeled indexed snippets',async()=>{
  assert.equal(profile.url,'https://www.adidas.co.in/');
  assert.equal(calls.filter(call=>call.name==='ai_global_reserve').length,1);
 });
+
+test('website response is delivered only after its workspace lock is released',async()=>{
+ let unlock,locked=true,delivered=false;
+ const client={auth:{getUser:async()=>({data:{user:{id:'owner'}}})},from:()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:{owner_id:'owner'}})})})}),rpc:async name=>{
+  if(name==='ai_workspace_lock')return {data:'lease'};
+  if(name==='ai_workspace_read')return {data:{attempts:0,answers:[]}};
+  if(name==='ai_workspace_write')return {data:null};
+  if(name==='ai_workspace_unlock'){await new Promise(resolve=>{unlock=resolve;});locked=false;return {data:null};}
+ }};
+ const handler=createWebsiteApiHandler({client,analyze:async url=>({name:'Example',domain:'example.com',url})});
+ const pending=handler(request('token',{url:'https://example.com'}),{setHeader(){},end(){assert.equal(locked,false);delivered=true;}});
+ while(!unlock)await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(delivered,false);unlock();await pending;assert.equal(delivered,true);
+});
