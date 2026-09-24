@@ -1,3 +1,4 @@
+import {requestWithReservation} from './provider-request.mjs';
 import {websiteUrl} from './website-analysis.mjs';
 import {cloudBudgetStore} from './collector-store.mjs';
 import {canonicalWebsiteName,domainBrandLabel} from './brand-identity.mjs';
@@ -7,15 +8,17 @@ export async function searchWebsiteProfile(input,{client,key,request=fetch,now=n
  if(!client||!key)throw Error('Search snippet fallback is unavailable.');
  const url=websiteUrl(input),domain=url.hostname.replace(/^www\./,'');
  const headers={Authorization:`Bearer ${key}`};
+ const reserve=async()=>{
  const accountResponse=await request('https://www.searchapi.io/api/v1/me',{headers,signal:AbortSignal.timeout(10000),redirect:'error'});
  if(!accountResponse.ok)throw Error('Search snippet fallback is unavailable.');
  const account=await accountResponse.json();
  if(account.subscription||account.account?.monthly_allowance!==0||!(account.account?.remaining_credits>0))throw Error('Search snippet fallback needs free trial credits.');
  const budget=cloudBudgetStore(client),usage=await budget.usage();
  if(usage.search>=100||!(await budget.reserve('search',100)))throw Error('Shared search trial limit reached.');
+ };
  const region={in:'India',uk:'United Kingdom',au:'Australia',ca:'Canada',de:'Germany',fr:'France',jp:'Japan',sg:'Singapore',nz:'New Zealand'}[domain.split('.').at(-1)]||'';
  const query=`${domainBrandLabel(domain).replace(/[-_]/g,' ')} ${region} official website`.replace(/\s+/g,' ').trim();
- const response=await request('https://www.searchapi.io/api/v1/search?'+new URLSearchParams({engine:'google',q:query}),{headers,signal:AbortSignal.timeout(20000),redirect:'error'});
+ const response=await requestWithReservation(request,'https://www.searchapi.io/api/v1/search?'+new URLSearchParams({engine:'google',q:query}),{headers,signal:AbortSignal.timeout(20000),redirect:'error'},reserve);
  if(!response.ok)throw Error('Search snippet fallback did not return usable results.');
  const data=await response.json();
  const rows=(Array.isArray(data.organic_results)?data.organic_results:[]).filter(row=>{

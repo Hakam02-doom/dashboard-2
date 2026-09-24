@@ -51,9 +51,9 @@ function AiVisibilityContent(props){
   setReadyDomain(profile.domain);setEditing(false);setError('');
  }
  async function watchJob(initial){
-  localStorage.setItem(storageKey+':job',initial.id);setJob(initial);setStage(initial.stage);setUrl(initial.url);
+  localStorage.setItem(storageKey+':job',initial.id);setJob(initial);setStage(initial.status==='queued'?'Queued · '+initial.stage:initial.stage);setUrl(initial.url);
   watcher.current?.abort();const controller=new AbortController();watcher.current=controller;
-  const done=await followAnalysisJob(initial.id,{request:jobRequest,signal:controller.signal,onJob:next=>{setJob(next);setStage(next.stage);}});
+  const done=await followAnalysisJob(initial.id,{request:jobRequest,signal:controller.signal,onJob:next=>{setJob(next);setStage(next.status==='queued'?'Queued · '+next.stage:next.stage);}});
   if(!validBusiness(done.profile))throw Error('The completed business profile could not be loaded.');
   localStorage.removeItem(storageKey+':job');openReport(done.profile);props.onToast('Your AI Insights are ready.');
  }

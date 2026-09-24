@@ -60,3 +60,22 @@ test('baseline worker completes across separate invocations with at most one pai
  }
  assert.equal(response.body.report.status,'complete');assert.equal(response.body.answers.length,3);assert.equal(paid,8);
 });
+test('replaying a journaled response never reserves provider budget twice',async()=>{
+ const client=journalClient();let charges=0,requests=0;
+ const request=journaledRequest(client,'job',async()=>{requests++;return new Response('{"ok":true}');});
+ const {requestWithReservation}=await import('../server/provider-request.mjs');
+ const call=()=>requestWithReservation(request,'https://api.openai.com/v1/chat/completions',{method:'POST',body:'same'},async()=>{charges++;});
+ await call();await call();assert.equal(charges,1);assert.equal(requests,1);
+});
+test('a completed journal can recover a step even after the shared budget is exhausted',async()=>{
+ const client=journalClient();let network=0;const body={search_metadata:{status:'Success',id:'discovery'},markdown:'Acme and Rival offer business tools.',reference_links:[]};
+ const request=journaledRequest(client,'job',async url=>{network++;return new Response(JSON.stringify(url.endsWith('/me')?{account:{remaining_credits:10,monthly_allowance:0}}:body));});
+ let state={attempts:0,answers:[]};const store={kind:'test',load:async()=>structuredClone(state),save:async next=>{state=structuredClone(next);},acquire:async()=>'lease',release:async()=>{}};
+ let exhausted=false,reservations=0;
+ const budgetStore={usage:async()=>({search:exhausted?100:0,analysis:exhausted?300:0,direct:0}),reserve:async()=>{reservations++;assert.equal(exhausted,false);return true;}};
+ async function call(){const h=searchapiHandler({local:true,key:'key',analysisKey:'key',analysisBudget:15,store,budgetStore,request});const req=Readable.from([JSON.stringify({action:'baselineStep',business:{name:'Acme',domain:'acme.com'}})]);req.method='POST';req.internalWorker=true;req.headers={origin:'http://127.0.0.1:5174',host:'127.0.0.1:5174','content-type':'application/json'};const res={setHeader(){},end(raw){this.body=JSON.parse(raw);}};await h(req,res);return res;}
+ assert.equal((await call()).body.report.discovery.id,'discovery');const calls=network;
+ // Simulates the process dying after journaling a response but before saving the report.
+ state={attempts:1,answers:[]};exhausted=true;
+ assert.equal((await call()).body.report.discovery.id,'discovery');assert.equal(network,calls);assert.equal(reservations,1);
+});

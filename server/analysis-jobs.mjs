@@ -16,7 +16,8 @@ export function createJobsApi(env,{client=serverClient(env),local=false}={}){
   if(!(local?['http://127.0.0.1:5174','http://localhost:5174'].includes(req.headers.origin):req.headers.origin===origin))return send(res,403,{error:'Open Dashboard 2.'});
   if(!client)return send(res,503,{error:'Analysis storage is unavailable.'});
   try{
-   const user=await verifiedUser(req,client),body=await readJsonBody(req,4096);
+   let user;try{user=await verifiedUser(req,client);}catch(e){return send(res,e.status===503?503:401,{error:e.status===503?'Analysis is temporarily unavailable. Please try again.':'Your browser connection expired. Refresh to reconnect.'});}
+   const body=await readJsonBody(req,4096);
    if(body.action==='status'){
     let query=client.from('ai_analysis_jobs').select('*').eq('owner_id',user.id);
     if(body.id){if(!/^[a-f0-9-]{36}$/i.test(body.id))return send(res,400,{error:'Invalid analysis.'});query=query.eq('id',body.id);}
@@ -44,7 +45,7 @@ export function createJobsApi(env,{client=serverClient(env),local=false}={}){
 // Journal before sending paid requests. Completed responses are replayed locally
 // after an interrupted worker. Ambiguous in-flight calls never spend twice.
 export function journaledRequest(client,jobId,request=fetch){
- return async(url,options={})=>{
+ const journal=async(url,options={},reserve)=>{
   const paid=String(url).includes('/api/v1/search?')||String(url).startsWith('https://api.openai.com/');
   if(!paid)return request(url,options);
   const fingerprint=createHash('sha256').update(JSON.stringify([String(url),options.method||'GET',options.body||''])).digest('hex');
@@ -56,12 +57,15 @@ export function journaledRequest(client,jobId,request=fetch){
    if(data.status!=='complete')throw Error('Saved scans: a provider request was interrupted. It will not be charged again automatically.');
    return new Response(JSON.stringify(data.response),{status:data.http_status,headers:{'Content-Type':'application/json'}});
   }
+  if(reserve)await reserve();
   const response=await request(url,options);
   const data=await response.json();
   const {error}=await client.from('ai_analysis_requests').update({status:'complete',response:data,http_status:response.status}).eq('job_id',jobId).eq('fingerprint',fingerprint);
   if(error)throw Error('Saved scans provider response could not be stored. Automatic collection stopped to prevent duplicate charges.');
   return new Response(JSON.stringify(data),{status:response.status,headers:{'Content-Type':'application/json'}});
  };
+ journal.managesReservations=true;
+ return journal;
 }
 export async function runAnalysisStep(job,{client,env,request=fetch,analyze=analyzeWebsite}){
  const store=cloudCollectorStore(client,job.owner_id),journal=journaledRequest(client,job.id,request);
@@ -87,7 +91,7 @@ export async function runAnalysisStep(job,{client,env,request=fetch,analyze=anal
 export function createJobsWorker(env,{client=serverClient(env),step=runAnalysisStep}={}){
  return async(req,res)=>{
   const expected=env.AI_CRON_SECRET,provided=String(req.headers.authorization||'').replace(/^Bearer /,'');
-  if(!expected||provided.length!==expected.length||!timingSafeEqual(Buffer.from(expected),Buffer.from(provided)))return send(res,401,{error:'Unauthorized worker.'});
+  if(!expected||Buffer.byteLength(provided)!==Buffer.byteLength(expected)||!timingSafeEqual(Buffer.from(expected),Buffer.from(provided)))return send(res,401,{error:'Unauthorized worker.'});
   if(!client)return send(res,503,{error:'Storage unavailable.'});
   let job;
   try{

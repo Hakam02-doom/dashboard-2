@@ -1,3 +1,4 @@
+import {requestWithReservation} from './provider-request.mjs';
 import {refreshPositions} from './answer-position.mjs';
 import {rollbackOnboarding} from './rollback-onboarding.mjs';
 import {fetchWebsite} from './website-analysis.mjs';
@@ -28,7 +29,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
  let busy=false;
  const storage=store||localCollectorStore(directory);let leaseToken;
  const load=()=>storage.load(),save=state=>storage.save(state,leaseToken);
- async function provider(path) {let response;try{response=await request('https://www.searchapi.io'+path,{headers:{Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(path.endsWith('/me')?10000:120000),redirect:'error'});}catch{throw new Error('SearchAPI did not respond. The attempt may have used a credit; check history before retrying.');}if(!response.ok)throw new Error(`SearchAPI returned ${response.status}. ${response.status>=500?'The provider could not complete this request.':'Check your trial access.'} No automatic retry was made.`);return response.json();}
+ async function provider(path,reserve) {let response;try{response=await requestWithReservation(request,'https://www.searchapi.io'+path,{headers:{Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(path.endsWith('/me')?10000:120000),redirect:'error'},reserve);}catch(e){if(/^(OpenAI pilot budget|SearchAPI|Saved scans)/.test(e.message||''))throw e;throw new Error('SearchAPI did not respond. The attempt may have used a credit; check history before retrying.');}if(!response.ok)throw new Error(`SearchAPI returned ${response.status}. ${response.status>=500?'The provider could not complete this request.':'Check your trial access.'} No automatic retry was made.`);return response.json();}
  return async(req,res)=>{
   const send=(code,body)=>{res.statusCode=code;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(body));};
   if(!local)return send(503,{error:'Live scans currently run in the local Dashboard 2 preview only.'});
@@ -122,11 +123,13 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
    const collect=async(prompt,engine='chatgpt')=>{
     if(DIRECT_ENGINES.includes(engine))return collectDirect({engine,config:direct,business,prompt,request,reserve:async()=>{await reserveShared('direct',direct.limit||0,'Direct collector: request allowance reached.');state.directAttempts=(state.directAttempts||0)+1;await save(state);}});
     if(!key)throw new Error('SearchAPI is not configured.');
-    if(shared.search>=100)throw new Error('SearchAPI local pilot limit reached.');
-    const account=await provider('/api/v1/me');
-    if(account.subscription||account.account?.monthly_allowance!==0||!(account.account?.remaining_credits>0))throw new Error('SearchAPI free-trial access could not be confirmed.');
-    await reserveShared('search',100,'SearchAPI local pilot limit reached.');state.attempts++;await save(state);
-    const row=normalizeAnswer(await provider('/api/v1/search?'+new URLSearchParams({engine,q:prompt,...(engine==='chatgpt'?{web_search:'true'}:{})})),business,prompt,engine);
+    if(shared.search>=100&&!request.managesReservations)throw new Error('SearchAPI local pilot limit reached.');
+    const reserve=async()=>{
+     const account=await provider('/api/v1/me');
+     if(account.subscription||account.account?.monthly_allowance!==0||!(account.account?.remaining_credits>0))throw new Error('SearchAPI free-trial access could not be confirmed.');
+     await reserveShared('search',100,'SearchAPI local pilot limit reached.');state.attempts++;await save(state);
+    };
+    const row=normalizeAnswer(await provider('/api/v1/search?'+new URLSearchParams({engine,q:prompt,...(engine==='chatgpt'?{web_search:'true'}:{})}),reserve),business,prompt,engine);
     if(!row.id||state.answers.some(r=>r.domain===business.domain&&r.answer.engine===row.engine&&r.answer.id===row.id))throw Error('SearchAPI returned a cached answer. It was not counted as a new observation.');
     return row;
    };
@@ -179,7 +182,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
     const today=new Date().toISOString().slice(0,10);
     let saved=state.answers.find(r=>r.domain===business.domain&&(r.collectionEngine||'chatgpt')===collectionEngine&&normalize(r.answer.prompt)===normalize(q.text)&&r.answer.at.slice(0,10)===today);
     if(saved?.answer.brandAssessment){await finishJob();return send(200,result());}
-    if(shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
+    if(action!=='baselineStep'&&shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
     if(!saved){const answer=await collect(q.text.trim(),collectionEngine);answer.topic=q.topic;answer.type=[business.name,business.domain,...competitors,...Object.values(profile?.aliases||{}).flat()].some(name=>namedEvidence(q.text,name))?'Branded':q.type;saved={domain:business.domain,collectionEngine,answer};state.answers.push(saved);await save(state);}
     const names=[business.name,...competitors];
     const assessment=await analyze('Assess each supplied brand in the answer using its aliases. Return an entry for every brand. Copy verbatim mention and sentiment evidence. A short ordinary word is not a brand unless its surrounding text clearly identifies that company. Position must be an explicit numbered brand recommendation; never use numbered topic headings or casual mention order. Unknown sentiment is Not assessed; unknown rank is null.',{brands:names,aliases:aliases(),answer:saved.answer.answer.slice(0,20000)},assessmentSchema);
@@ -258,7 +261,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
     if(!q)return send(400,{error:'Choose a question from your plan.'});
     let saved=state.answers.find(r=>r.domain===business.domain&&r.promptId===q.id&&(r.collectionEngine||'chatgpt')===collectionEngine&&r.answer.at.slice(0,10)===new Date().toISOString().slice(0,10));
     if(saved?.answer.brandAssessment){await finishJob();return send(200,result());}
-    if(shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
+    if(action!=='baselineStep'&&shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
     if(!saved){const answer=await collect(q.text,collectionEngine);answer.topic=q.topic;answer.type='Unbranded';saved={domain:business.domain,promptId:q.id,collectionEngine,answer};state.answers.push(saved);await save(state);}
     const names=[business.name,...competitors];
     const assessment=await analyze('Assess each supplied brand in the answer using its aliases. Return an entry for every brand. Copy verbatim mention and sentiment evidence. A short ordinary word is not a brand unless its surrounding text clearly identifies that company. Position must be an explicit numbered brand recommendation; never use numbered topic headings or casual mention order. Unknown sentiment is Not assessed; unknown rank is null.',{brands:names,aliases:aliases(),answer:saved.answer.answer.slice(0,20000)},assessmentSchema);
@@ -267,12 +270,12 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
    if(action==='baseline'||action==='baselineStep'){
     const stepped=action==='baselineStep';
     if(state.reports?.[business.domain]?.status==='complete')return send(200,result());
-    if(shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
+    if(action!=='baselineStep'&&shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
     if(!analysisKey)throw Error('OpenAI analysis is not configured.');
 
     const report=state.reports?.[business.domain]||{status:'pending',questions:[],completed:[],startedAt:new Date().toISOString()};
     const needed=(report.discovery?0:1)+3-state.answers.filter(r=>r.domain===business.domain&&r.baselineId===report.startedAt).length;
-    if(shared.search+needed>100)return send(429,{error:'Not enough shared trial attempts remain to finish this report.'});
+    if(!stepped&&shared.search+needed>100)return send(429,{error:'Not enough shared trial attempts remain to finish this report.'});
     state.reports={...state.reports,[business.domain]:report};report.status='running';report.error='';await save(state);
     try{
      if(!report.discovery){report.discovery=await collect(`Identify direct competitors of ${business.name} (${business.domain}). Explain the business category and name up to 8 competing products serving similar customers. Cite sources. Profile context: ${String(business.description||'').slice(0,600)}`);await save(state);if(stepped)return send(200,result());}
@@ -296,7 +299,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
       saved.answer=applyAssessment(saved.answer,assessment,names,business.name,aliases());report.completed.push(i);await save(state);if(stepped&&report.completed.length<3)return send(200,result());
      }
      report.status='complete';report.finishedAt=new Date().toISOString();await save(state);
-    }catch(e){report.status='partial';report.error=/^(OpenAI|SearchAPI|No usable|The buyer)/.test(e.message)?e.message:'The baseline could not finish. Saved evidence has been preserved.';await save(state);}
+    }catch(e){report.status='partial';report.error=/^(OpenAI|SearchAPI|Saved scans|No usable|The buyer)/.test(e.message)?e.message:'The baseline could not finish. Saved evidence has been preserved.';await save(state);}
     return send(200,result());
    }
    if(action!=='scan')return send(400,{error:'Unknown action.'});
@@ -304,7 +307,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
    if(!analysisKey)throw Error('OpenAI analysis is not configured. No collection was started.');
    if(typeof body.prompt!=='string'||!body.prompt.trim()||body.prompt.length>1000)return send(400,{error:'Enter a question of up to 1,000 characters.'});
    if(shared.search>=100)return send(429,{error:'The shared pilot limit of 100 attempts has been reached. No more requests will run.'});
-   if(shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
+   if(action!=='baselineStep'&&shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
    const account=await provider('/api/v1/me');
    if(account.subscription || !Number.isFinite(account.account?.remaining_credits) || account.account.remaining_credits<1 || account.account.monthly_allowance!==0)return send(402,{error:'Free-trial access could not be confirmed. No scan was started.'});
    // Reserve before sending: timeouts and failed saves cannot silently spend extra trial credits.
