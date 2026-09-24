@@ -55,7 +55,7 @@ export function domainOf(url) {
     return "";
   }
 }
-export function sourceRows(rows, domain, prior = []) {
+export function sourceRows(rows, domain, prior = [], sourceMetadata = {}) {
   const map = new Map();
   for (const row of rows)
     for (const url of unique(row.sources || [])) {
@@ -75,10 +75,14 @@ export function sourceRows(rows, domain, prior = []) {
                   )
                 ? "Social"
                 : "Third-party",
-          contentType: row.sourceMetadata?.[url]?.contentType || "Unclassified",
-          metadata: row.sourceMetadata?.[url] || null,
+          contentType: (sourceMetadata[url] || row.sourceMetadata?.[url])?.contentType || "Unclassified",
+          metadata: sourceMetadata[url] || row.sourceMetadata?.[url] || null,
         };
         map.set(url, item);
+      }
+      if (!item.metadata && row.sourceMetadata?.[url]) {
+        item.metadata = row.sourceMetadata[url];
+        item.contentType = item.metadata.contentType || "Unclassified";
       }
       item.rows.push(row);
     }
@@ -96,6 +100,24 @@ export function sourceRows(rows, domain, prior = []) {
       };
     })
     .sort((a, b) => b.count - a.count);
+}
+export function sourceDomainRows(sources, answerCount, prior = []) {
+  const grouped = new Map();
+  for (const source of sources) {
+    if (!grouped.has(source.domain)) grouped.set(source.domain, { name: source.domain, sources: [], rows: [] });
+    const group = grouped.get(source.domain);
+    group.sources.push(source);
+    group.rows.push(...source.rows);
+  }
+  return [...grouped.values()].map((group) => {
+    group.rows = [...new Set(group.rows)];
+    group.count = group.rows.length;
+    group.used = answerCount ? (group.count / answerCount) * 100 : null;
+    const included = new Set(group.sources.map((source) => source.url));
+    const before = prior.filter((row) => row.sources?.some((url) => included.has(url))).length;
+    group.growth = prior.length && answerCount ? group.used - (before / prior.length) * 100 : null;
+    return group;
+  }).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 }
 export function topicRows(rows, own) {
   return unique(rows.map((r) => r.topic || "Unclassified")).map((name) => {

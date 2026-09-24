@@ -509,7 +509,9 @@
 }
 .ip-content-types button {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: minmax(86px, 1fr) minmax(64px, 1fr) auto;
+  align-items: center;
+  gap: 10px;
   border: 0;
   padding: 7px 0;
   background: none;
@@ -528,13 +530,37 @@
 }
 .ip-url {
   max-width: 430px !important;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  min-width: 0;
+  width: 100%;
   text-align: left;
+}
+.ip-url-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 .ip-url .avr-brand-logo {
   flex: none;
 }
+.ip-source-overview { display: grid; gap: 20px; }
+.ip-source-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.ip-source-summary span { display: grid; gap: 2px; padding: 11px 12px; border-radius: 12px; background: var(--d2-surface-muted, #f3f4f8); }
+.ip-source-summary strong, .ip-source-profile-stat strong { font-size: 24px; line-height: 1.15; font-weight: 650; font-variant-numeric: tabular-nums; }
+.ip-source-summary small, .ip-source-profile-stat span { font-size: 11px; color: var(--d2-muted, #697386); }
+.ip-domain-list { display: grid; gap: 3px; }
+.ip-pages .ip-domain-list button { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 10px; align-items: center; width: 100%; padding: 8px 6px; border: 0; background: transparent; text-align: left; }
+.ip-pages .ip-domain-list button:hover { background: var(--d2-purple-soft); }
+.ip-domain-list .avr-brand-logo { width: 24px; height: 24px; }
+.ip-domain-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ip-domain-name i { display: block; height: 7px; margin-top: 5px; border-radius: 8px; background: var(--d2-surface-muted, #f3f4f8); overflow: hidden; }
+.ip-domain-name b { display: block; height: 100%; background: var(--d2-purple-ink, #7c71b6); border-radius: inherit; }
+.ip-domain-list strong { font-size: 13px; font-variant-numeric: tabular-nums; }
+.ip-domain-list strong small { font-weight: 400; color: var(--d2-muted, #697386); }
+.ip-source-profile { display: grid; gap: 18px; }
+.ip-source-profile-stat { display: flex; align-items: baseline; gap: 9px; }
+.ip-source-formats { display: grid; gap: 8px; padding-top: 15px; border-top: 1px solid var(--d2-line, #e5e7ef); }
+.ip-source-formats > span { font-size: 11px; color: var(--d2-muted, #697386); }
 .ip-topic-name {
   display: flex;
   gap: 10px;

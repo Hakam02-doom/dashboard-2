@@ -32,6 +32,7 @@ import {
   bucketRows,
   sentimentData,
   sourceRows,
+  sourceDomainRows,
   topicRows,
   fanoutRows,
   domainOf,
@@ -878,7 +879,7 @@ function SentimentPage({
     </>
   );
 }
-function SourcesPage({ rows, prior, business, cadence, onDetail, onAnswer }) {
+function SourcesPage({ rows, prior, business, sourceMetadata, onDetail, onAnswer }) {
   const [q, setQ] = useState(""),
     [includeMedia, setIncludeMedia] = useState(true),
     [sourceSort, setSourceSort] = useState("Used"),
@@ -886,9 +887,8 @@ function SourcesPage({ rows, prior, business, cadence, onDetail, onAnswer }) {
     [type, setType] = useState("All types"),
     [content, setContent] = useState("All content"),
     [gap, setGap] = useState(false),
-    [mode, setMode] = useState(0),
     [limit, setLimit] = useState(25);
-  const sources = sourceRows(rows, business.domain, prior),
+  const sources = sourceRows(rows, business.domain, prior, sourceMetadata),
     filtered = sources
       .filter(
         (s) =>
@@ -905,20 +905,30 @@ function SourcesPage({ rows, prior, business, cadence, onDetail, onAnswer }) {
             ? (b.growth ?? -Infinity) - (a.growth ?? -Infinity)
             : b.count - a.count,
       );
-  const domains = unique(filtered.map((s) => s.domain))
-    .map((name) => ({
-      name,
-      rows: rows.filter((r) => r.sources?.some((u) => domainOf(u) === name)),
-    }))
-    .sort((a, b) => b.rows.length - a.rows.length);
-  const contentTypes = unique(sources.map((s) => s.contentType));
+  const domains = sourceDomainRows(filtered, rows.length, prior);
+  const contentTypes = unique(sources.map((s) => s.contentType).filter((t) => t !== "Unclassified"));
+  const classified = sources.filter((s) => s.contentType !== "Unclassified").length;
+  const citedAnswers = new Set(sources.flatMap((s) => s.rows)).size;
+  const groups = group ? domains.map((d) => ({
+    url: d.name, domain: d.name,
+    type: unique(d.sources.map((s) => s.type)).join(", "),
+    contentType: "Multiple", rows: d.rows, used: d.used, growth: d.growth,
+  })).sort((a, b) => sourceSort === "Source"
+    ? a.url.localeCompare(b.url)
+    : sourceSort === "Change"
+      ? (b.growth ?? -Infinity) - (a.growth ?? -Infinity)
+      : b.rows.length - a.rows.length) : filtered;
+  const openCitations = (s) => onDetail({
+    title: s.domain + " · " + s.rows.length + " citing answers",
+    content: <AnswerList rows={s.rows} business={business} brand={business.name} onAnswer={onAnswer} />,
+  });
   return (
     <>
       <div className="ip-grid ip-source-grid">
         <Card
           title="Top Domains"
           icon={Globe2}
-          note="Citation trends by domain"
+          note="Domains cited most often in measured answers"
           actions={
             <>
               <select
@@ -930,85 +940,57 @@ function SourcesPage({ rows, prior, business, cadence, onDetail, onAnswer }) {
                   <option key={t}>{t}</option>
                 ))}
               </select>
-              <Switch value={mode} onChange={setMode} />
             </>
           }
           footer={
             <>
-              <span>Top {Math.min(5, domains.length)} domains</span>
+              <span>{domains.length} domains · {filtered.length} URLs</span>
               <button aria-pressed={gap} onClick={() => setGap(!gap)}>
                 {gap ? "Hide" : "Show"} gap analysis
               </button>
             </>
           }
         >
-          <Chart
-            mode={mode}
-            series={domains
-              .slice(0, 5)
-              .map((d) => ({
-                name: d.name,
-                points: bucketRows(rows, cadence).map(([date, rs]) => ({
-                  date,
-                  value: rs.filter((r) =>
-                    r.sources?.some((u) => domainOf(u) === d.name),
-                  ).length,
-                })),
-              }))}
-            onPoint={(date, domain) =>
-              onDetail({
-                title: domain + " · " + date,
-                content: (
-                  <AnswerList
-                    rows={domains
-                      .find((d) => d.name === domain)
-                      .rows.filter(
-                        (r) => bucketRows([r], cadence)[0]?.[0] === date,
-                      )}
-                    business={business}
-                    brand={business.name}
-                    onAnswer={onAnswer}
-                  />
-                ),
-              })
-            }
-          />
+          {domains.length ? <div className="ip-source-overview">
+            <div className="ip-source-summary">
+              <span><strong>{citedAnswers}</strong><small>answers with sources</small></span>
+              <span><strong>{sources.length}</strong><small>distinct URLs</small></span>
+              <span><strong>{sourceDomainRows(sources, rows.length).length}</strong><small>domains discovered</small></span>
+            </div>
+            <div className="ip-domain-list" aria-label="Top cited domains">
+              {domains.slice(0, 6).map((d) => <button key={d.name} onClick={() => openCitations(d)} aria-label={`${d.name}, cited in ${d.count} of ${rows.length} answers. View evidence`}>
+                <BrandLogo name={d.name} domain={d.name} />
+                <span className="ip-domain-name">{d.name}<i><b style={{ width: `${Math.max(2, d.used || 0)}%` }} /></i></span>
+                <strong>{d.count}<small>/{rows.length}</small></strong>
+              </button>)}
+            </div>
+            <p className="ip-note">Each bar shows the share of measured answers citing that domain. Select a domain to inspect the answers.</p>
+          </div> : <Empty>No cited domains match these filters.</Empty>}
         </Card>
         <Card
-          title="Content Types"
+          title="Source profile"
           icon={Layers}
-          note="Formats classified from read source pages"
-          footer={`${contentTypes.length} content types`}
+          note="Where cited pages come from"
+          footer={`${classified} of ${sources.length} URLs classified by format`}
         >
-          <div className="ip-content-types">
-            {contentTypes.map((t) => {
-              const count = sources
-                  .filter((s) => s.contentType === t)
-                  .reduce((sum, s) => sum + s.count, 0),
-                total = sources.reduce((sum, s) => sum + s.count, 0);
-              return (
-                <button
-                  key={t}
-                  aria-pressed={content === t}
-                  onClick={() => setContent(content === t ? "All content" : t)}
-                >
-                  <span>{t}</span>
-                  <i>
-                    <b
-                      style={{
-                        width: `${(count / Math.max(total, 1)) * 100}%`,
-                      }}
-                    />
-                  </i>
-                  <strong>{pct((count / Math.max(total, 1)) * 100)}</strong>
-                </button>
-              );
-            })}
+          <div className="ip-source-profile">
+            <div className="ip-source-profile-stat"><strong>{sources.length}</strong><span>cited URLs</span></div>
+            <div className="ip-content-types">
+              {["Owned", "Third-party", "Social"].map((t) => {
+                const count = sources.filter((s) => s.type === t).length;
+                return <button key={t} aria-pressed={type === t} onClick={() => setType(type === t ? "All types" : t)}>
+                  <span>{t}</span><i><b style={{ width: `${sources.length ? count / sources.length * 100 : 0}%` }} /></i><strong>{count}</strong>
+                </button>;
+              })}
+            </div>
+            {contentTypes.length > 0 && <div className="ip-source-formats"><span>Classified formats</span><div className="ip-content-types">{contentTypes.map((t) => {
+              const count = sources.filter((s) => s.contentType === t).length;
+              return <button key={t} aria-pressed={content === t} onClick={() => setContent(content === t ? "All content" : t)}>
+                <span>{t}</span><i><b style={{ width: `${count / Math.max(sources.length, 1) * 100}%` }} /></i><strong>{count}</strong>
+              </button>;
+            })}</div></div>}
           </div>
-          <p className="ip-note">
-            Use “Classify next 3 sources” to identify formats from public page
-            excerpts. Blocked pages stay unclassified.
-          </p>
+          {classified < sources.length && <p className="ip-note">Page formats require a successful source read. Unread or blocked pages remain unclassified.</p>}
         </Card>
       </div>
       <Card
@@ -1027,7 +1009,7 @@ function SourcesPage({ rows, prior, business, cadence, onDetail, onAnswer }) {
                 checked={includeMedia}
                 onChange={(e) => setIncludeMedia(e.target.checked)}
               />
-              Include third-party media
+              Include social sources
             </label>
             <button aria-pressed={group} onClick={() => setGroup(!group)}>
               Group by domain
@@ -1043,14 +1025,14 @@ function SourcesPage({ rows, prior, business, cadence, onDetail, onAnswer }) {
         }
         footer={
           <>
-            <span>{filtered.length} URLs</span>
-            {filtered.length > limit && (
+            <span>{group ? `${groups.length} domains` : `${filtered.length} URLs`}</span>
+            {groups.length > limit && (
               <button onClick={() => setLimit(limit + 25)}>Show 25 more</button>
             )}
           </>
         }
       >
-        <Table
+        {groups.length ? <Table
           headers={[
             "#",
             <button onClick={() => setSourceSort("Source")}>Source ↕</button>,
@@ -1061,19 +1043,7 @@ function SourcesPage({ rows, prior, business, cadence, onDetail, onAnswer }) {
             "Content",
           ]}
         >
-          {(group
-            ? domains.map((d) => ({
-                url: d.name,
-                domain: d.name,
-                type: filtered.find((s) => s.domain === d.name)?.type,
-                contentType: "Multiple",
-                rows: d.rows,
-                used: rows.length ? (d.rows.length / rows.length) * 100 : null,
-                growth: null,
-              }))
-            : filtered
-          )
-            .slice(0, limit)
+          {groups.slice(0, limit)
             .map((s, i) => (
               <tr key={s.url}>
                 <td>{i + 1}</td>
@@ -1103,14 +1073,14 @@ function SourcesPage({ rows, prior, business, cadence, onDetail, onAnswer }) {
                     }
                   >
                     <BrandLogo name={s.domain} domain={s.domain} />
-                    {s.url.replace(/^https?:\/\//, "")}{" "}
+                    <span className="ip-url-text" title={s.url}>{group ? s.domain : s.url.replace(/^https?:\/\//, "")}</span>{" "}
                     <ChevronRight size={14} />
                   </button>
                 </td>
                 <td>
                   <span className="ip-pill">{s.type}</span>
                 </td>
-                <td>{s.contentType}</td>
+                <td>{group ? "—" : s.contentType}</td>
                 <td>{pct(s.used)}</td>
                 <td title="Change in citation rate versus the preceding equal period">
                   {s.growth === null
@@ -1131,7 +1101,7 @@ function SourcesPage({ rows, prior, business, cadence, onDetail, onAnswer }) {
                                 <small>{s.metadata.method}</small>
                               </blockquote>
                             )}
-                            {s.rows.map((r) => (
+                            {group ? <AnswerList rows={s.rows} business={business} brand={business.name} onAnswer={onAnswer} /> : s.rows.map((r) => (
                               <blockquote key={r.id}>
                                 <p>
                                   {r.citations?.find((c) => c.url === s.url)
@@ -1153,8 +1123,7 @@ function SourcesPage({ rows, prior, business, cadence, onDetail, onAnswer }) {
                 </td>
               </tr>
             ))}
-        </Table>
-        {!filtered.length && <Empty />}
+        </Table> : <Empty>{sources.length ? "No sources match these filters." : "Cited URLs will appear after answers are collected."}</Empty>}
       </Card>
     </>
   );
@@ -1761,6 +1730,7 @@ export function InsightPages({
   annotations,
   reviews,
   library,
+  sourceMetadata,
   onReview,
   onTrack,
   evidence,
@@ -1819,6 +1789,7 @@ export function InsightPages({
     annotations,
     reviews,
     library,
+    sourceMetadata,
     onDetail: setDetail,
     onAnswer: answer,
     onReview: async (f, v) => {

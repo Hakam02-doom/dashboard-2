@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   brandRows,
   sourceRows,
+  sourceDomainRows,
   fanoutRows,
   sentimentData,
   bucketRows,
@@ -32,6 +33,20 @@ test("citations count each URL once per answer and reject non-web sources", () =
   assert.equal(result[0].count, 1);
   assert.equal(result[0].used, 100);
   assert.equal(result[0].growth, null);
+});
+test("domain totals count distinct answers after URL filtering", () => {
+  const second = { ...row, id: "b", sources: ["https://acme.com/guide", "https://acme.com/news"] };
+  const sources = sourceRows([row, second], "acme.com");
+  const domains = sourceDomainRows(sources, 2);
+  assert.equal(domains[0].count, 2);
+  assert.equal(domains[0].used, 100);
+  assert.equal(domains[0].rows.length, 2);
+  assert.equal(sourceDomainRows(sources.filter((source) => source.url.endsWith("/news")), 2)[0].count, 1);
+});
+test("a later answer can provide source format metadata", () => {
+  const later = { ...row, id: "b", sourceMetadata: { "https://acme.com/guide": { contentType: "Article" } } };
+  assert.equal(sourceRows([row, later], "acme.com")[0].contentType, "Article");
+  assert.equal(sourceRows([row], "acme.com", [], { "https://acme.com/guide": { contentType: "Guide" } })[0].contentType, "Guide");
 });
 test("fanout coverage respects active tracking and normalizes equivalent queries", () => {
   const result = fanoutRows(
