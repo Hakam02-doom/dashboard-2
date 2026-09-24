@@ -3,9 +3,6 @@
 
 @media (min-width: 561px) {
   .sidebar {
-    box-sizing: border-box;
-    height: 100dvh;
-    min-height: 0;
     transition: flex-basis 220ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .sidebar > .brand {
@@ -14,15 +11,6 @@
     flex-shrink: 0;
   }
   .sidebar .sidebar-toggle { display: grid; }
-  .sidebar > .nav-rail {
-    flex: 1 1 auto;
-    min-height: 0;
-  }
-  .sidebar-expanded > .nav-rail {
-    overflow-y: auto;
-    scrollbar-width: thin;
-  }
-  .sidebar > .bottom-rail { flex: 0 0 auto; }
   .sidebar-expanded { flex-basis: 200px; }
   .sidebar-expanded .nav-rail,
   .sidebar-expanded .bottom-rail { width: calc(100% - 3px); }
@@ -48,13 +36,6 @@
   .sidebar-expanded .notification-button i { left: 26px; right: auto; }
   .sidebar-expanded .nav-item[data-tooltip]::after { display: none; }
   .sidebar-expanded .nav-item > svg { flex-shrink: 0; }
-}
-
-@media (min-width: 561px) and (max-height: 680px) {
-  .sidebar:not(.sidebar-expanded) > .nav-rail {
-    overflow-y: auto;
-    scrollbar-width: thin;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
