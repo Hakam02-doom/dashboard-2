@@ -5,7 +5,7 @@ import {Globe2,ArrowRight,Check,ArrowLeft,RefreshCw,Building2} from 'lucide-reac
 import {AiWorkspace} from './AiWorkspace';
 import {BUSINESS_KEY,businessStorageKey,publicWebsite,validBusiness} from './ai-business';
 import {analysisRequest} from './analysis-request.mjs';
-import {followAnalysisJob} from './analysis-jobs-client.mjs';
+import {followAnalysisJob,hasEarlyResults} from './analysis-jobs-client.mjs';
 import './ai-insights.css';
 
 function originalProfile({onboarding,market,...profile}){return profile;}
@@ -53,9 +53,9 @@ function AiVisibilityContent(props){
  async function watchJob(initial){
   localStorage.setItem(storageKey+':job',initial.id);setJob(initial);setStage(initial.status==='queued'?'Queued · '+initial.stage:initial.stage);setUrl(initial.url);
   watcher.current?.abort();const controller=new AbortController();watcher.current=controller;
-  const done=await followAnalysisJob(initial.id,{request:jobRequest,signal:controller.signal,onJob:next=>{setJob(next);setStage(next.status==='queued'?'Queued · '+next.stage:next.stage);}});
+  const done=await followAnalysisJob(initial.id,{request:jobRequest,signal:controller.signal,isReady:hasEarlyResults,onJob:next=>{setJob(next);setStage(next.status==='queued'?'Queued · '+next.stage:next.stage);}});
   if(!validBusiness(done.profile))throw Error('The completed business profile could not be loaded.');
-  localStorage.removeItem(storageKey+':job');openReport(done.profile);props.onToast('Your AI Insights are ready.');
+  if(done.status==='complete')localStorage.removeItem(storageKey+':job');openReport(done.profile);props.onToast(done.status==='complete'?'Your AI Insights are ready.':'Your first results are ready. The full analysis continues in the background.');
  }
  async function startWebsite(target){
   const {job:next}=await jobRequest({action:'start',url:target});await watchJob(next);
@@ -89,7 +89,7 @@ function AiVisibilityContent(props){
   <div className="aiv-intake-layout"><div className="panel aiv-intake">
    <span className="aiv-symbol"><Globe2 size={27}/></span><h3>Start with your website.</h3><p>One link. 100 buyer questions. Your brand, competitors, and AI visibility in one place.</p>
    <form onSubmit={analyze}><label htmlFor="business-website">Business website</label><div className="aiv-url-field"><Globe2 size={19}/><input id="business-website" autoComplete="url" inputMode="url" required maxLength={2048} placeholder="yourbusiness.com" value={url} onChange={e=>{setUrl(e.target.value);setError('');}} disabled={busy}/></div><p className="aiv-hint">Results are saved for this browser. No account or email needed.</p><button className="cs-button filled" disabled={busy||!url.trim()}>{busy?<><RefreshCw size={16} className="aiv-spin"/>Analyzing website…</>:<>Analyze website<ArrowRight size={16}/></>}</button></form>
-   {busy&&<div className="aiv-analysis-progress" role="status" aria-live="polite"><strong>{stage}</strong>{job&&<progress max="100" value={job.progress} aria-label="Analysis progress"/>}<p>Your analysis continues if you close this page. Results will be here when you return.</p>{job?.progress>=21&&job?.profile&&<button type="button" className="cs-button" onClick={()=>{watcher.current?.abort();setBusy(false);running.current=false;openReport(job.profile);}}>View available results<ArrowRight size={16}/></button>}</div>}
+   {busy&&<div className="aiv-analysis-progress" role="status" aria-live="polite"><strong>{stage}</strong>{job&&<progress max="100" value={job.progress} aria-label="Analysis progress"/>}<p>Your report opens after the first four measured answers. The remaining questions continue in the background, even if you close this page.</p>{job?.progress>=21&&job?.profile&&<button type="button" className="cs-button" onClick={()=>{watcher.current?.abort();setBusy(false);running.current=false;openReport(job.profile);}}>View available results<ArrowRight size={16}/></button>}</div>}
    {error&&<div className="aiv-error" role="alert"><p>{error}</p></div>}
 
    {Object.keys(businesses.profiles).length>0&&<section className="aiv-saved-sites" aria-label="Saved websites"><h3>Your websites</h3><p>Continue with a website you’ve already added.</p><div>{Object.values(businesses.profiles).map(profile=><button type="button" key={profile.domain} className="cs-button" onClick={()=>openSaved(profile)} disabled={busy}><strong>{profile.name}</strong><span>{profile.domain}</span><ArrowRight size={15}/></button>)}</div></section>}

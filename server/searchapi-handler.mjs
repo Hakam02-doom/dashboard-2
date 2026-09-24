@@ -1,3 +1,4 @@
+import {runBenchmarkBatch} from './benchmark-batch.mjs';
 import {nextPromptBatch,appendPromptBatch,PROMPT_TARGET} from './hundred-prompts.mjs';
 import {requestWithReservation} from './provider-request.mjs';
 import {refreshPositions} from './answer-position.mjs';
@@ -29,7 +30,11 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
  const maximumAnalysisAttempts=Math.floor(budget/0.05);
  let busy=false;
  const storage=store||localCollectorStore(directory);let leaseToken;
- const load=()=>storage.load(),save=state=>storage.save(state,leaseToken);
+ let saveChain=Promise.resolve();
+ const load=()=>storage.load(),save=state=>{
+  const write=saveChain.then(()=>storage.save(structuredClone(state),leaseToken));
+  saveChain=write.catch(()=>{});return write;
+ };
  async function provider(path,reserve) {let response;try{response=await requestWithReservation(request,'https://www.searchapi.io'+path,{headers:{Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(path.endsWith('/me')?10000:120000),redirect:'error'},reserve);}catch(e){if(/^(OpenAI pilot budget|SearchAPI|Saved scans)/.test(e.message||''))throw e;throw new Error('SearchAPI did not respond. The attempt may have used a credit; check history before retrying.');}if(!response.ok)throw new Error(`SearchAPI returned ${response.status}. ${response.status>=500?'The provider could not complete this request.':'Check your trial access.'} No automatic retry was made.`);return response.json();}
  return async(req,res)=>{
   const send=(code,body)=>{res.statusCode=code;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(body));};
@@ -252,6 +257,27 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
     const benchmark=state.benchmarks?.[business.domain]||{status:'running',engine:'OpenAI Web Search',total:20,completed:[],startedAt:new Date().toISOString(),error:''};
     state.benchmarks={...state.benchmarks,[business.domain]:benchmark};
     if(benchmark.status==='complete')return send(200,result());
+    if(action==='benchmarkStep'){
+     benchmark.status='running';benchmark.error='';await save(state);
+     const findAnswer=q=>state.answers.find(r=>r.domain===business.domain&&r.benchmarkId===benchmark.startedAt&&r.promptId===q.id);
+     try{
+      await runBenchmarkBatch({questions:selected,completed:benchmark.completed,findAnswer,
+       collect:async q=>{
+        const collected=await collectOpenAIWeb({key:analysisKey,business,prompt:q.text,topic:q.topic,request,reserve});
+        state.answers.push({domain:business.domain,benchmarkId:benchmark.startedAt,promptId:q.id,collectionEngine:'openai-web',answer:{...collected.answer,topic:q.topic}});
+        state.analysisCost=(state.analysisCost||0)+collected.cost;await save(state);
+       },
+       assess:async(q,saved)=>{
+        const names=assessmentNamesForAnswer(business.name,competitors,saved.answer.answer,aliases());
+        const assessment=await analyze('Assess each supplied brand using its aliases. Distinguish brands from common words and similarly named businesses. Copy verbatim evidence for every mention, sentiment and explicit numbered recommendation rank. Also discover other market alternatives explicitly named in this answer. Return null for unsupported rankings and Not assessed for uncertain sentiment.',{brands:names,aliases:aliases(),answer:saved.answer.answer.slice(0,20000)},assessmentSchema);
+        saved.answer={...applyAssessment(saved.answer,assessment,names,business.name,aliases()),promptId:q.id,measurementProfile:profile};await save(state);
+       },
+       finish:async q=>{if(!benchmark.completed.includes(q.id))benchmark.completed.push(q.id);await save(state);}
+      });
+      if(benchmark.completed.length===target){benchmark.status='complete';benchmark.finishedAt=new Date().toISOString();}
+     }catch(e){benchmark.status='partial';benchmark.error=e.message;}
+     await save(state);return send(200,result());
+    }
     const q=selected.find(item=>!benchmark.completed.includes(item.id));
     if(!q){benchmark.status='complete';benchmark.finishedAt=new Date().toISOString();await save(state);return send(200,result());}
     benchmark.status='running';benchmark.error='';await save(state);

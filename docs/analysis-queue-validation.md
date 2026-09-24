@@ -18,3 +18,14 @@
   required count. The saved valid responses were reused to finish the plan.
 - Collection uses one paid call per queue step, alternating intents; answers and
   assessment are separate persisted steps. The full live run is asynchronous.
+
+### Faster collection
+
+- 145 automated checks pass. The full 100-question fixture uses 50 collection /
+  assessment phases instead of 200, with the same 100 searches and 100 evidence
+  assessments. Planning calls are unchanged.
+- Concurrency tests verify four independent requests overlap, failed siblings do
+  not discard successful results, pending answers resume before new searches,
+  completed questions are not recollected, and workspace saves never overlap.
+- Onboarding opens the report after four assessed answers. It retains the active
+  job ID so refresh and background completion remain resumable.
