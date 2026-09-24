@@ -40,3 +40,10 @@
 - Production SQL transaction (rolled back) verified duplicate submission reuse, fresh website switch, owner isolation, clearing old answers and unchanged budget counters.
 - Supabase was observed RESTARTING during verification and later ACTIVE_HEALTHY. This infrastructure interruption is separate from orchestration timing.
 - 100-question fresh provider latency remains unverified. At the database migration, 417 of 500 conservative reservations were already used ($20.85 of the $25 shared allowance). This remaining allowance cannot cover a new 204-call test; the cap was not increased or reset.
+
+Release `fc8e464` passed 151 tests in an isolated checkout (excluding unrelated
+local logo/startup edits), the production build, and project-isolation checks.
+The new reset function and budget table were verified inaccessible to public
+roles. The initial Vercel deployment was blocked by the local Git author email;
+the repository author was changed to the authenticated GitHub account's noreply
+identity before redeployment.
