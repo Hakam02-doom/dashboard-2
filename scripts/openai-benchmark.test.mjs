@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {normalizeOpenAIWebResponse} from '../server/openai-web-collector.mjs';
 import {canonicalWebsiteName,assessmentAliases} from '../server/brand-identity.mjs';
-import {applyAssessment,completeBenchmarkPlan} from '../server/ai-analysis.mjs';
+import {applyAssessment,assessmentNamesForAnswer,asksForOptions,completeBenchmarkPlan,extendBenchmarkPlan} from '../server/ai-analysis.mjs';
 import {reportMetrics} from '../src/ai-insights-data.js';
 import {searchapiHandler} from '../server/searchapi-handler.mjs';
 
@@ -31,10 +31,11 @@ test('regional and legal website names map to the public brand without stripping
 });
 
 test('answer-discovered brands have one shared denominator and unsupported names are rejected',()=>{
- const base={at:'2026-09-24T12:00:00Z',prompt:'Which running shoes are good?',engine:'OpenAI Web Search',answer:'Adidas and Nike offer running shoes. On also makes running shoes.'};
- const checked=applyAssessment(base,{brands:[{name:'adidas IN',mentioned:true,mentionEvidence:'Adidas and Nike offer running shoes.',recommended:null,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:'Adidas and Nike offer running shoes.',position:null,positionEvidence:''}],discoveredBrands:[{name:'Nike',mentioned:true,mentionEvidence:'Adidas and Nike offer running shoes.',recommended:null,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:'Adidas and Nike offer running shoes.',position:null,positionEvidence:''},{name:'NIKE',mentioned:true,mentionEvidence:'Adidas and Nike offer running shoes.',recommended:null,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:'Adidas and Nike offer running shoes.',position:null,positionEvidence:''},{name:'On',mentioned:true,mentionEvidence:'On also makes running shoes.',recommended:null,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:'On also makes running shoes.',position:null,positionEvidence:''},{name:'Puma',mentioned:true,mentionEvidence:'Puma makes running shoes.',recommended:null,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:'',position:null,positionEvidence:''}]},['adidas IN'],'adidas IN',{'adidas IN':['adidas']});
+ const base={at:'2026-09-24T12:00:00Z',prompt:'Which running shoes are good?',engine:'OpenAI Web Search',answer:'Adidas and Nike offer running shoes. Nike Pegasus 41 is a model. On also makes running shoes.'};
+ const checked=applyAssessment(base,{brands:[{name:'adidas IN',mentioned:true,mentionEvidence:'Adidas and Nike offer running shoes.',recommended:null,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:'Adidas and Nike offer running shoes.',position:null,positionEvidence:''}],discoveredBrands:[{name:'Nike',entityKind:'Market brand',mentioned:true,mentionEvidence:'Adidas and Nike offer running shoes.',recommended:null,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:'Adidas and Nike offer running shoes.',position:null,positionEvidence:''},{name:'NIKE',entityKind:'Market brand',mentioned:true,mentionEvidence:'Adidas and Nike offer running shoes.',recommended:null,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:'Adidas and Nike offer running shoes.',position:null,positionEvidence:''},{name:'Nike Pegasus 41',entityKind:'Product or model',mentioned:true,mentionEvidence:'Nike Pegasus 41 is a model.',recommended:null,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:'Nike Pegasus 41 is a model.',position:null,positionEvidence:''},{name:'On',entityKind:'Market brand',mentioned:true,mentionEvidence:'On also makes running shoes.',recommended:null,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:'On also makes running shoes.',position:null,positionEvidence:''},{name:'Puma',entityKind:'Market brand',mentioned:true,mentionEvidence:'Puma makes running shoes.',recommended:null,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:'',position:null,positionEvidence:''}]},['adidas IN'],'adidas IN',{'adidas IN':['adidas']});
  assert.equal(checked.mentioned,true);
  assert.deepEqual(checked.competitors,['Nike','On']);
+ assert.ok(!checked.trackedCompetitors.includes('Nike Pegasus 41'));
  assert.equal(checked.discoveryComplete,true);
  const second={...checked,at:'2026-09-25T12:00:00Z',prompt:'What is shoe fit?',answer:'Good fit matters.',mentioned:false,competitors:[],trackedCompetitors:[],brandAssessment:{},competitorMetrics:{}};
  const ranks=reportMetrics([checked,second],'adidas IN');
@@ -52,6 +53,16 @@ test('verified regional mention saves an actual answer excerpt when model omits 
  assert.ok(row.answer.includes(checked.brandAssessment['adidas IN'].mentionEvidence));
 });
 
+test('benchmark classifies only named competitors and accepts a verified regional alias',()=>{
+ const answer='Adidas and Nike are common running shoe brands.';
+ const aliases={'adidas IN':['Adidas']};
+ assert.deepEqual(assessmentNamesForAnswer('adidas IN',['Nike','Puma','On'],answer,aliases),['adidas IN','Nike']);
+ const item={name:'Adidas',mentioned:true,mentionEvidence:'Adidas and Nike are common running shoe brands.',recommended:null,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:'Adidas and Nike are common running shoe brands.',position:null,positionEvidence:''};
+ const checked=applyAssessment({answer,prompt:'Which running shoe brands?',engine:'OpenAI Web Search'},{brands:[item],discoveredBrands:[]},['adidas IN'],'adidas IN',aliases);
+ assert.equal(checked.mentioned,true);
+ assert.ok(Object.hasOwn(checked.brandAssessment,'adidas IN'));
+});
+
 test('branded or repeated generated questions are replaced with distinct category questions',()=>{
  const draft={audience:'Marketing teams',products:['AI visibility software'],questions:Array.from({length:24},(_,i)=>({text:i<12?'Which Searchable products should I buy?':`Which AI visibility tools fit team scenario ${i}?`,intent:['Discovery','Comparison','Buying decisions','Use cases'][Math.floor(i/6)],topic:'AI visibility software'}))};
  const plan=completeBenchmarkPlan(draft,['Searchable Limited','Searchable','Peec AI'],'AI visibility tools');
@@ -61,17 +72,39 @@ test('branded or repeated generated questions are replaced with distinct categor
  assert.deepEqual(['Discovery','Comparison','Buying decisions','Use cases'].map(intent=>plan.questions.filter(q=>q.intent===intent).length),[6,6,6,6]);
 });
 
+test('future plans replace advice prompts with questions that ask for market options',()=>{
+ assert.equal(asksForOptions('How can a clinic use AI SEO software to make content?'),false);
+ assert.equal(asksForOptions('Which AI SEO platforms suit a clinic?'),true);
+ const intents=['Discovery','Comparison','Buying decisions','Use cases'];
+ const draft={audience:'Clinics',products:['Uplift AI'],questions:Array.from({length:24},(_,i)=>({text:`How can a clinic use AI SEO software for scenario number ${i+1}?`,intent:intents[Math.floor(i/6)],topic:'AI SEO'}))};
+ const plan=completeBenchmarkPlan(draft,['Uplift AI'],'AI SEO automation platform for local businesses');
+ assert.equal(plan.questions.length,24);
+ assert.ok(plan.questions.every(q=>asksForOptions(q.text)));
+ assert.ok(plan.questions.every(q=>!q.text.includes('for local businesses')));
+});
+
+test('extended question plan adds two distinct scenarios per buyer intent',()=>{
+ const intents=['Discovery','Comparison','Buying decisions','Use cases'];
+ const plan={questions:Array.from({length:24},(_,i)=>({id:`prompt-${i+1}`,text:`Which running shoe options suit buyer situation number ${i+1}?`,intent:intents[Math.floor(i/6)],topic:'Running shoes'}))};
+ const extension={questions:Array.from({length:8},(_,i)=>({text:`Which running shoe options fit extended scenario number ${i+1}?`,intent:intents[Math.floor(i/2)],topic:'Running shoes'}))};
+ const result=extendBenchmarkPlan(plan,extension,['adidas IN','Nike']);
+ assert.equal(result.questions.length,32);
+ assert.deepEqual(intents.map(intent=>result.questions.filter(q=>q.intent===intent).length),[8,8,8,8]);
+ assert.throws(()=>extendBenchmarkPlan(plan,{questions:[...extension.questions.slice(0,7),plan.questions[0]]},['adidas IN']),/repeated|two questions/);
+});
+
 test('20-question benchmark saves each answer, discovers brands and resumes without recollecting',async()=>{
  const directory=await mkdtemp(join(tmpdir(),'d2-benchmark-'));
  let searches=0,assessments=0,plans=0;
  const intents=['Discovery','Comparison','Buying decisions','Use cases'];
  const plan={audience:'Runners',products:['Running shoes'],questions:Array.from({length:24},(_,i)=>({text:`Which running shoe options suit buyer situation number ${i+1}?`,intent:intents[Math.floor(i/6)],topic:'Running shoes'}))};
+ const extension={questions:Array.from({length:8},(_,i)=>({text:`Which running shoe options fit extended scenario number ${i+1}?`,intent:intents[Math.floor(i/2)],topic:'Running shoes'}))};
  const request=async(url,options)=>({ok:true,json:async()=>{
   if(url.endsWith('/responses')){searches++;return {...web,id:`web-${searches}`};}
-  if(url.includes('chat/completions')){const input=JSON.parse(JSON.parse(options.body).messages[1].content);if(!input.brands){plans++;return {choices:[{finish_reason:'stop',message:{content:JSON.stringify(plan)}}]};}assessments++;return {choices:[{finish_reason:'stop',message:{content:JSON.stringify({brands:input.brands.map(name=>({name,mentioned:name==='adidas IN',mentionEvidence:name==='adidas IN'?'Adidas and Nike offer running shoes.':'',recommended:null,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:name==='adidas IN'?'Adidas and Nike offer running shoes.':'',position:null,positionEvidence:''})),discoveredBrands:[{name:'Nike',mentioned:true,mentionEvidence:'Adidas and Nike offer running shoes.',recommended:null,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:'Adidas and Nike offer running shoes.',position:null,positionEvidence:''}]})}}]};}
+  if(url.includes('chat/completions')){const input=JSON.parse(JSON.parse(options.body).messages[1].content);if(!input.brands){plans++;return {choices:[{finish_reason:'stop',message:{content:JSON.stringify(input.priorQuestions?extension:plan)}}]};}assessments++;return {choices:[{finish_reason:'stop',message:{content:JSON.stringify({brands:input.brands.map(name=>({name,mentioned:name==='adidas IN',mentionEvidence:name==='adidas IN'?'Adidas and Nike offer running shoes.':'',recommended:null,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:name==='adidas IN'?'Adidas and Nike offer running shoes.':'',position:null,positionEvidence:''})),discoveredBrands:[{name:'Nike',entityKind:'Market brand',mentioned:true,mentionEvidence:'Adidas and Nike offer running shoes.',recommended:null,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:'Adidas and Nike offer running shoes.',position:null,positionEvidence:''}]})}}]};}
   throw Error('Unexpected provider');
  }});
- const call=async handler=>{const req=Readable.from([JSON.stringify({action:'benchmarkNext',business:adidas})]);req.method='POST';req.headers={origin:'http://127.0.0.1:5174',host:'127.0.0.1:5174','content-type':'application/json'};const res={setHeader(){},end(x){this.body=JSON.parse(x);}};await handler(req,res);return res;};
+ const call=async(handler,action='benchmarkNext')=>{const req=Readable.from([JSON.stringify({action,business:adidas})]);req.method='POST';req.headers={origin:'http://127.0.0.1:5174',host:'127.0.0.1:5174','content-type':'application/json'};const res={setHeader(){},end(x){this.body=JSON.parse(x);}};await handler(req,res);return res;};
  try{
   let h=searchapiHandler({local:true,analysisKey:'test',analysisBudget:15,directory,request});
   for(let i=0;i<20;i++){const r=await call(h);assert.equal(r.statusCode,200);assert.equal(r.body.benchmark.completed.length,i+1);}
@@ -79,6 +112,10 @@ test('20-question benchmark saves each answer, discovers brands and resumes with
   assert.ok(done.body.answers.every(answer=>answer.benchmarkId===done.body.benchmark.startedAt));
   assert.equal(searches,20);assert.equal(assessments,20);assert.equal(plans,1);
   h=searchapiHandler({local:true,analysisKey:'test',analysisBudget:15,directory,request});await call(h);assert.equal(searches,20);
+  const expanded=await call(h,'benchmarkExpand');assert.equal(expanded.statusCode,200,JSON.stringify(expanded.body));assert.equal(expanded.body.benchmark.total,32);
+  for(let i=0;i<12;i++){const r=await call(h);assert.equal(r.statusCode,200);assert.equal(r.body.benchmark.completed.length,21+i);}
+  const full=await call(h);assert.equal(full.body.benchmark.status,'complete');assert.equal(full.body.answers.length,32);
+  assert.equal(searches,32);assert.equal(assessments,32);assert.equal(plans,2);
   const ranks=reportMetrics(done.body.answers,'adidas IN');assert.equal(ranks.find(b=>b.name==='Nike').visibility,100);
  }finally{await rm(directory,{recursive:true});}
 });
