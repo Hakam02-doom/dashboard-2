@@ -31,7 +31,11 @@ export function applyAssessment(row,assessment,names,own,aliases={}){
   return '';
  };
  const normalized=value=>String(value).normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,'');
- const discovered=Array.isArray(assessment.discoveredBrands)?assessment.discoveredBrands.slice(0,50).filter(b=>typeof b?.name==='string'&&b.name.trim().length>=2&&b.name.length<=80&&quotePresent(b.mentionEvidence)&&namedEvidence(b.mentionEvidence,b.name)&&!names.some(name=>[name,...(aliases[name]||[])].some(alias=>normalized(alias)===normalized(b.name)))):[];
+ const discoveredNames=new Set();
+ const discovered=Array.isArray(assessment.discoveredBrands)?assessment.discoveredBrands.slice(0,50).filter(b=>{
+  if(typeof b?.name!=='string'||b.name.trim().length<2||b.name.length>80||!quotePresent(b.mentionEvidence)||!namedEvidence(b.mentionEvidence,b.name)||names.some(name=>[name,...(aliases[name]||[])].some(alias=>normalized(alias)===normalized(b.name))))return false;
+  const key=normalized(b.name);if(discoveredNames.has(key))return false;discoveredNames.add(key);return true;
+ }):[];
  const allNames=[...names,...new Set(discovered.map(b=>b.name))];
  for(const name of allNames){const b=assessment.brands?.find(b=>b.name===name)||discovered.find(item=>item.name===name);if(!b)continue;
   const identifiers=[name,...(aliases[name]||[])];
