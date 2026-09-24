@@ -6,20 +6,24 @@ export const aiCloud = url && key ? createClient(url,key,{auth:{persistSession:t
 
 async function currentUser() {
  if(!aiCloud)throw new Error('Cloud connection is not configured.');
- const {data,error}=await aiCloud.auth.getUser();
+ let timer;
+ let response;
+ try{response=await Promise.race([aiCloud.auth.getUser(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('The monitoring connection is taking too long. Please try again shortly.')),20000);})]);}
+ finally{clearTimeout(timer);}
+ const {data,error}=response;
  if(error||!data.user)throw new Error('Sign in to AI Visibility to use cloud storage.');
  return data.user;
 }
 export async function saveCloudBusiness(profile) {
  if(!validBusiness(profile))throw new Error('Review the business profile before saving.');
  const user=await currentUser();
- const {data,error}=await aiCloud.from('ai_businesses').upsert({owner_id:user.id,domain:profile.domain,name:profile.name,profile},{onConflict:'owner_id,domain'}).select('id').single();
+ const {data,error}=await aiCloud.from('ai_businesses').upsert({owner_id:user.id,domain:profile.domain,name:profile.name,profile},{onConflict:'owner_id,domain'}).select('id').single().abortSignal(AbortSignal.timeout(20000));
  if(error)throw new Error('The business could not be saved to your account. Please retry.');
  return data.id;
 }
 export async function loadCloudBusinesses() {
  const user=await currentUser();
- const {data,error}=await aiCloud.from('ai_businesses').select('id,domain,name,profile').eq('owner_id',user.id).order('created_at',{ascending:false});
+ const {data,error}=await aiCloud.from('ai_businesses').select('id,domain,name,profile').eq('owner_id',user.id).order('created_at',{ascending:false}).abortSignal(AbortSignal.timeout(20000));
  if(error)throw new Error('Cloud businesses could not be loaded.');
  return data.filter(row=>validBusiness(row.profile));
 }

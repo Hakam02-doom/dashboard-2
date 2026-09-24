@@ -14,7 +14,7 @@ export function AiCloudAccount({entry=false,onConnected}){
  function cooldown(){const until=Date.now()+60000;setRetryAt(until);setNow(Date.now());try{localStorage.setItem(AUTH_RETRY_KEY,String(until));}catch{}}
  async function signIn(e){e.preventDefault();if(busy||seconds)return;setBusy(true);setError('');setMessage('');try{try{localStorage.setItem('d2-ai-return','1');}catch{}const {error}=await aiCloud.auth.signInWithOtp({email:email.trim(),options:{emailRedirectTo:location.origin+'/'}});if(error)throw error;cooldown();setMessage('Sign-in link sent. Open the latest email to continue to AI Visibility.');}catch(e){if(e.status===429||/rate.?limit/i.test(e.message||''))cooldown();setError(authFailure(e));}finally{setBusy(false);}}
  async function connect(){if(connecting.current)return;connecting.current=true;setBusy(true);setError('');setMessage('');try{
-  const response=await aiFetch('/api/ai/connections',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'claim'})});const result=await response.json();if(!response.ok)throw Error(result.error);
+  const response=await aiFetch('/api/ai/connections',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'claim'}),signal:AbortSignal.timeout(20000)});const result=await response.json();if(!response.ok)throw Error(result.error);
   const key=businessStorageKey(user.id);
   let local;try{local=JSON.parse(localStorage.getItem(key)||'null');}catch{local=null;}
   if(!local&&result.legacyOwner){try{local=JSON.parse(localStorage.getItem(BUSINESS_KEY)||'null');}catch{local=null;}}
