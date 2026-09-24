@@ -28,7 +28,7 @@ export function normalizeAnswer(data, business, prompt, engine='chatgpt') {
   return { id: data.search_metadata.id, at: new Date().toISOString(), engine:({chatgpt:'ChatGPT Search',gemini:'Gemini',perplexity:'Perplexity'})[engine], method:`SearchAPI · ${engine}`, prompt, answer:data.markdown, mentioned, cited:sources.some(s=>{const h=new URL(s).hostname.replace(/^www\./,'');return h===business.domain||h.endsWith('.'+business.domain);}), position:null, sentiment:'Not assessed', topic:'Manual scans', type:normalize(prompt).includes(normalize(business.name))?'Branded':'Unbranded', location:'Not specified', sources, fanout:(data.search_queries||[]).filter(q=>typeof q==='string'), competitors:[], comparisonAssessed:false, webSearchPerformed:data.response_metadata?.is_web_search_performed===true, model:data.response_metadata?.model||null };
 }
 export function searchapiHandler({local=false, key='', analysisKey='', analysisBudget=1, direct={}, googleTraffic=null, directory, store, budgetStore=null, request=fetch, crawl=crawlCoverage, benchmarkConcurrency=24, onBenchmarkProgress=async()=>{}}={}) {
- const budget=Number.isFinite(analysisBudget)&&analysisBudget>0?Math.min(analysisBudget,30):1;
+ const budget=Number.isFinite(analysisBudget)&&analysisBudget>0?Math.min(analysisBudget,31):1;
  const maximumAnalysisAttempts=Math.floor(budget/0.05);
  let busy=false;
  const storage=store||localCollectorStore(directory);let leaseToken;
@@ -232,7 +232,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
     if(!analysisKey)throw Error('OpenAI analysis is not configured.');
     const benchmark=state.benchmarks?.[business.domain],plan=state.plans?.[business.domain];
     if(!benchmark||benchmark.status!=='complete'||benchmark.total!==20||!plan)throw Error('Complete the first 20 questions before expanding the benchmark.');
-    if(shared.analysis+25>maximumAnalysisAttempts)throw Error('The remaining $15 pilot allowance cannot cover the 12-question extension.');
+    if(shared.analysis+25>maximumAnalysisAttempts)throw Error('The remaining analysis allowance cannot cover the 12-question extension.');
     const excluded=[business.name,business.domain,...(aliases()[business.name]||[]),...competitors];
     const input={business,category:state.reports?.[business.domain]?.category,priorQuestions:plan.questions.map(q=>q.text),excludedBrandNames:excluded};
     const instructions='Prepare exactly eight NEW unbranded buyer questions, two each for Discovery, Comparison, Buying decisions, and Use cases. The questions must elicit specific vendor or product options. Explore distinct audiences, budgets and use cases not covered by the prior questions. Never repeat or paraphrase a prior question. Never include a brand name or domain. Keep topics under 100 characters.';
