@@ -45,5 +45,5 @@ Release `fc8e464` passed 151 tests in an isolated checkout (excluding unrelated
 local logo/startup edits), the production build, and project-isolation checks.
 The new reset function and budget table were verified inaccessible to public
 roles. The initial Vercel deployment was blocked by the local Git author email;
-the repository author was changed to the authenticated GitHub account's noreply
-identity before redeployment.
+the repository author was changed to the primary verified email shown in the
+authenticated GitHub account settings before redeployment.
