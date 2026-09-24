@@ -52,3 +52,7 @@
 @media(max-width:450px){.avr-horizontal-row{grid-template-columns:minmax(95px,1fr) minmax(55px,1fr) 48px;gap:8px;padding:9px 3px}.avr-horizontal-scale{display:none}}
 /* Keep ten brand labels readable instead of squeezing their values together. */
 @media(max-width:650px){.avr-bars{overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}.avr-bar-columns>button{min-width:38px}}
+/* Explain when a filter cannot change this particular measurement set. */
+.avr-filters select:disabled{opacity:.68;cursor:not-allowed;background:var(--d2-surface-muted,#f0eff7)}
+.avr-filter-feedback{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:-8px 0 18px;color:var(--d2-muted,#626d7c);font-size:12px;line-height:1.5}
+.avr-filter-feedback .ai-text-button{font-size:12px;text-decoration:underline;text-underline-offset:2px}
