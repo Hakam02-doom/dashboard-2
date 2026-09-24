@@ -15,14 +15,14 @@
   }
   .sidebar .sidebar-toggle { display: grid; }
   .sidebar > .nav-rail {
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     min-height: 0;
   }
   .sidebar-expanded > .nav-rail {
     overflow-y: auto;
     scrollbar-width: thin;
   }
-  .sidebar > .bottom-rail { flex: 1 0 auto; }
+  .sidebar > .bottom-rail { flex: 0 0 auto; }
   .sidebar-expanded { flex-basis: 200px; }
   .sidebar-expanded .nav-rail,
   .sidebar-expanded .bottom-rail { width: calc(100% - 3px); }
