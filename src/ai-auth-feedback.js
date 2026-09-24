@@ -20,6 +20,7 @@ export function authRedirectFailure(hash){
  const params=new URLSearchParams(String(hash||'').replace(/^#/,''));
  if(!params.has('error'))return '';
  if(params.get('error_code')==='otp_expired')return 'That email link has expired or was already used. Try Google sign-in, or request one new email link when email sending is available.';
+ if(params.get('error')==='server_error'||['unexpected_failure','provider_error','request_timeout'].includes(params.get('error_code'))||/unable to exchange external code|external provider|request timeout|timed out/i.test(params.get('error_description')||''))return 'The sign-in provider is temporarily unavailable. No dashboard session was started. Please try Google sign-in again shortly.';
  return 'Sign-in was not completed. Please choose a sign-in method and try again.';
 }
 export function retrySeconds(until,now=Date.now()){return Math.max(0,Math.ceil((Number(until||0)-now)/1000));}

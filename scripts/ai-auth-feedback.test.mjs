@@ -7,4 +7,6 @@ test('resend cooldown expires using elapsed wall time',()=>{assert.equal(retrySe
 test('gateway failures do not say the account or email link is invalid',()=>{assert.match(authFailure({status:504,message:'HTTP 504'}),/temporarily unavailable/);assert.match(emailLinkFailure({status:504}),/Check your inbox/);});
 test('global email limits direct users to an email-free sign-in method',()=>{assert.match(emailLinkFailure({status:429,code:'over_email_send_rate_limit'}),/Google sign-in/);});
 test('expired callback links are explained without echoing URL data',()=>{assert.match(authRedirectFailure('#error=access_denied&error_code=otp_expired'),/expired or was already used/);assert.equal(authRedirectFailure('#'), '');});
+test('provider callback failures are not blamed on the user',()=>{assert.match(authRedirectFailure('#error=server_error&error_code=unexpected_failure&error_description=internal'),/provider is temporarily unavailable/);});
+test('failed OAuth code exchange is presented as a provider problem',()=>{assert.match(authRedirectFailure('#error=access_denied&error_description=Unable+to+exchange+external+code'),/provider is temporarily unavailable/);});
 test('slow email requests stop the sending state',async()=>{await assert.rejects(withAuthTimeout(new Promise(()=>{}),5),{name:'TimeoutError'});});
