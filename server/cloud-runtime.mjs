@@ -11,7 +11,7 @@ export function serverClient(env){const url=env.VITE_SUPABASE_URL||env.SUPABASE_
 function unavailable(){const error=new Error('Monitoring sign-in is temporarily unavailable. Your email confirmation is still valid; retry the connection shortly.');error.status=503;return error;}
 async function authUser(client,token){
  let timer;
- try{return await Promise.race([client.auth.getUser(token),new Promise((_,reject)=>{timer=setTimeout(()=>reject(unavailable()),12000);})]);}
+ try{return await Promise.race([client.auth.getUser(token),new Promise((_,reject)=>{timer=setTimeout(()=>reject(unavailable()),25000);})]);}
  finally{clearTimeout(timer);}
 }
 export async function verifiedUser(req,client){
@@ -23,6 +23,16 @@ export async function verifiedUser(req,client){
  return data.user;
 }
 function send(res,status,body){res.statusCode=status;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(body));}
+const transientStoreError=error=>error&&(error.status>=500||error.status===0||/timeout|timed? out|fetch failed|gateway/i.test(error.message||''));
+export async function claimWorkspace(client,accountId){
+ let result;
+ for(let attempt=0;attempt<2;attempt++){
+  result=await client.rpc('ai_workspace_claim',{account_id:accountId}).abortSignal(AbortSignal.timeout(14000));
+  if(!transientStoreError(result.error)||attempt===1)break;
+  await new Promise(resolve=>setTimeout(resolve,700));
+ }
+ return result;
+}
 export function internalRequest(body){const req=Readable.from([JSON.stringify(body)]);req.method='POST';req.headers={origin:localOrigins[0],host:'127.0.0.1:5174','content-type':'application/json'};return req;}
 export function createRuntime(env,{local=false,directory='.local-ai'}={}){
  const client=serverClient(env),localStore=localCollectorStore(directory),budgetStore=client?cloudBudgetStore(client):null;
@@ -55,11 +65,9 @@ export function createRuntime(env,{local=false,directory='.local-ai'}={}){
   if(body.action==='status'){let reachable=false,linked=false;try{if(client){const {data,error}=await client.from('ai_collector_store').select('owner_id').eq('id',true).single().abortSignal(AbortSignal.timeout(10000));reachable=!error;linked=!!data?.owner_id;}}catch{}return send(res,200,{directCollectors:directStatus(direct),googleTrafficConfigured:googleTraffic.configured,googleServiceAccount:googleTraffic.serviceAccount,storage:client?'cloud':localStore.kind,cloudConfigured:!!client,cloudReachable:reachable,ownerLinked:linked,searchConfigured:!!env.SEARCHAPI_API_KEY,analysisConfigured:!!env.OPENAI_API_KEY,budget:Math.min(15,Number(env.AI_ANALYSIS_BUDGET_USD||1)),scheduling:true,keywordMode:'csv'});}
   if(body.action==='claim'&&client){
    let user;try{user=await verifiedUser(req,client);}catch(e){return send(res,e.status===503?503:401,{error:e.message});}
-   const {data:legacy,error:readError}=await client.from('ai_collector_store').select('owner_id').eq('id',true).single().abortSignal(AbortSignal.timeout(10000));
-   if(readError)return send(res,503,{error:'Monitoring storage is unavailable.'});
-   const {error}=await client.rpc('ai_workspace_init',{account_id:user.id}).abortSignal(AbortSignal.timeout(10000));
-   if(error)return send(res,503,{error:'Could not create a private monitoring workspace.'});
-   return send(res,200,{connected:true,legacyOwner:legacy.owner_id===user.id});
+   let result;try{result=await claimWorkspace(client,user.id);}catch{return send(res,503,{error:'Monitoring storage is temporarily unavailable. Your sign-in is still valid; try connecting again.'});}
+   if(result.error)return send(res,503,{error:'Monitoring storage is temporarily unavailable. Your sign-in is still valid; try connecting again.'});
+   return send(res,200,{connected:true,legacyOwner:result.data===true});
   }return send(res,400,{error:'Unknown connection action.'});
  },async cron(req,res){
   const expected=env.AI_CRON_SECRET,provided=String(req.headers.authorization||'').replace(/^Bearer /,'');

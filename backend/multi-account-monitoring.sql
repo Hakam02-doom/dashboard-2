@@ -21,6 +21,16 @@ language sql security invoker set search_path='' as $$
   insert into public.ai_collector_workspaces(owner_id) values(account_id)
   on conflict (owner_id) do nothing;
 $$;
+create function public.ai_workspace_claim(account_id uuid) returns boolean
+language plpgsql security invoker set search_path='' as $$
+begin
+  insert into public.ai_collector_workspaces(owner_id) values(account_id)
+  on conflict (owner_id) do nothing;
+  return exists (
+    select 1 from public.ai_collector_store
+    where id=true and owner_id=account_id
+  );
+end;$$;
 create function public.ai_workspace_read(account_id uuid) returns jsonb
 language sql security invoker set search_path='' as $$
   select payload from public.ai_collector_workspaces where owner_id=account_id;
@@ -71,3 +81,5 @@ end;$$;
 
 revoke all on function public.ai_workspace_init(uuid),public.ai_workspace_read(uuid),public.ai_workspace_lock(uuid,uuid),public.ai_workspace_write(uuid,jsonb,uuid),public.ai_workspace_unlock(uuid,uuid),public.ai_global_usage(),public.ai_global_reserve(text,int) from public,anon,authenticated;
 grant execute on function public.ai_workspace_init(uuid),public.ai_workspace_read(uuid),public.ai_workspace_lock(uuid,uuid),public.ai_workspace_write(uuid,jsonb,uuid),public.ai_workspace_unlock(uuid,uuid),public.ai_global_usage(),public.ai_global_reserve(text,int) to service_role;
+revoke all on function public.ai_workspace_claim(uuid) from public,anon,authenticated;
+grant execute on function public.ai_workspace_claim(uuid) to service_role;
