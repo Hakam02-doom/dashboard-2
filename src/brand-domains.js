@@ -1,4 +1,6 @@
-// Resolve identities from collected website evidence; never invent name.com domains.
+import { knownBrandByName } from './brand-identities.js';
+
+// Use verified identity aliases or collected website evidence; never invent name.com domains.
 export function publicDomain(value) {
  try {
   const u=new URL(value.includes('://')?value:`https://${value}`);
@@ -8,6 +10,11 @@ export function publicDomain(value) {
 }
 const compact=value=>value.toLowerCase().replace(/[^a-z0-9]/g,'');
 export function resolveBrandDomain(name, sources=[], suggestions=[]) {
+ const known=knownBrandByName(name);
+ if(known)return known.domain;
+ // A domain used as the brand's name is already an explicit identity, not a guess.
+ const namedDomain=publicDomain(name);
+ if(namedDomain)return namedDomain;
  const domains=[...new Set(sources.map(publicDomain).filter(Boolean))];
  const suggested=publicDomain(suggestions.find(s=>s.name===name)?.domain||'');
  if(suggested&&domains.includes(suggested))return suggested;
