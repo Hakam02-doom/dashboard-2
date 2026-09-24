@@ -27,6 +27,11 @@ test('production website reader uses the signed-in account workspace and cached 
  assert.equal(calls.length,2);
  assert.equal(states.get('first').websiteReads[Object.keys(states.get('first').websiteReads)[0]],1);
  assert.equal(states.get('second').websiteReads[Object.keys(states.get('second').websiteReads)[0]],1);
+ delete states.get('first').websiteProfiles;
+ const fallback=createWebsiteApiHandler({client,analyze:async()=>{throw Error('The website took too long to respond.');},searchFallback:async url=>({name:'Adidas India',domain:'adidas.co.in',url,source:'search-results',searchVersion:2,analyzedAt:new Date().toISOString()})});
+ const recovered=await invoke(fallback,'first',body);
+ assert.equal(recovered.statusCode,200);
+ assert.equal(recovered.body.profile.source,'search-results');
  assert.equal((await invoke(handler,null,body)).statusCode,401);
  assert.equal((await invoke(handler,'unknown',body)).statusCode,403);
 });

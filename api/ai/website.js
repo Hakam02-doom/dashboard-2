@@ -29,7 +29,7 @@ export function createWebsiteApiHandler({client=serverClient(process.env),analyz
    state.websiteReads[day]=(state.websiteReads[day]||0)+1;await store.save(state,lease);
    let profile;
    try{profile=await analyze(url);}catch(siteError){
-    if(!/HTTP (403|429)\b/.test(siteError.message||''))throw siteError;
+    if(!/HTTP (403|429)\b|took too long to (?:respond|resolve)/i.test(siteError.message||''))throw siteError;
     try{profile=await searchFallback(url);}catch{throw Error('The website blocked automated reading, and indexed details were unavailable. Enter the business details manually.');}
    }
    state.websiteProfiles={...state.websiteProfiles,[url]:profile};await store.save(state,lease);
