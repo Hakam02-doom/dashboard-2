@@ -36,3 +36,4 @@
 .aiv-analysis-progress p{margin:8px 0 0;font-size:14px}
 
 .aiv-intake>.aiv-saved-sites{margin:28px 0 0;padding:24px 0 0;border-bottom:0;border-top:1px solid var(--d2-line,#e3e5ee)}
+.aiv-analysis-progress progress{display:block;width:100%;height:7px;margin:16px 0;border:0;border-radius:8px;accent-color:var(--purple,#b9aff0)}

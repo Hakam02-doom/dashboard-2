@@ -28,7 +28,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
  let busy=false;
  const storage=store||localCollectorStore(directory);let leaseToken;
  const load=()=>storage.load(),save=state=>storage.save(state,leaseToken);
- async function provider(path) {let response;try{response=await request('https://www.searchapi.io'+path,{headers:{Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(120000),redirect:'error'});}catch{throw new Error('SearchAPI did not respond. The attempt may have used a credit; check history before retrying.');}if(!response.ok)throw new Error(`SearchAPI returned ${response.status}. ${response.status>=500?'The provider could not complete this request.':'Check your trial access.'} No automatic retry was made.`);return response.json();}
+ async function provider(path) {let response;try{response=await request('https://www.searchapi.io'+path,{headers:{Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(path.endsWith('/me')?10000:120000),redirect:'error'});}catch{throw new Error('SearchAPI did not respond. The attempt may have used a credit; check history before retrying.');}if(!response.ok)throw new Error(`SearchAPI returned ${response.status}. ${response.status>=500?'The provider could not complete this request.':'Check your trial access.'} No automatic retry was made.`);return response.json();}
  return async(req,res)=>{
   const send=(code,body)=>{res.statusCode=code;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(body));};
   if(!local)return send(503,{error:'Live scans currently run in the local Dashboard 2 preview only.'});
@@ -41,7 +41,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
    let body;try{body=JSON.parse(raw);}catch{return send(400,{error:'Invalid scan request.'});}
    let {business,action}=body;
    if(!business||typeof business.domain!=='string'||!/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(business.domain)||typeof business.name!=='string'||!business.name.trim()||business.name.length>100)return send(400,{error:'Choose a valid business first.'});
-   if(action==='scheduleTick'&&!req.internalWorker)return send(403,{error:'Internal worker only.'});
+   if(['scheduleTick','baselineStep'].includes(action)&&!req.internalWorker)return send(403,{error:'Internal worker only.'});
    if(action!=='list'){
     if(busy)return send(429,{code:'ANALYSIS_BUSY',retryAfter:5,error:'Another analysis is finishing. We’ll continue automatically.'});
     busy=true;ownsLock=true;leaseToken=await storage.acquire();if(!leaseToken)return send(429,{code:'ANALYSIS_BUSY',retryAfter:5,error:'Another analysis is finishing. We’ll continue automatically.'});
@@ -264,7 +264,8 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
     const assessment=await analyze('Assess each supplied brand in the answer using its aliases. Return an entry for every brand. Copy verbatim mention and sentiment evidence. A short ordinary word is not a brand unless its surrounding text clearly identifies that company. Position must be an explicit numbered brand recommendation; never use numbered topic headings or casual mention order. Unknown sentiment is Not assessed; unknown rank is null.',{brands:names,aliases:aliases(),answer:saved.answer.answer.slice(0,20000)},assessmentSchema);
     saved.answer={...applyAssessment(saved.answer,assessment,names,business.name,aliases()),promptId:q.id,measurementProfile:profile};await save(state);return send(200,result());
    }
-   if(action==='baseline'){
+   if(action==='baseline'||action==='baselineStep'){
+    const stepped=action==='baselineStep';
     if(state.reports?.[business.domain]?.status==='complete')return send(200,result());
     if(shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
     if(!analysisKey)throw Error('OpenAI analysis is not configured.');
@@ -274,7 +275,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
     if(shared.search+needed>100)return send(429,{error:'Not enough shared trial attempts remain to finish this report.'});
     state.reports={...state.reports,[business.domain]:report};report.status='running';report.error='';await save(state);
     try{
-     if(!report.discovery){report.discovery=await collect(`Identify direct competitors of ${business.name} (${business.domain}). Explain the business category and name up to 8 competing products serving similar customers. Cite sources. Profile context: ${String(business.description||'').slice(0,600)}`);await save(state);}
+     if(!report.discovery){report.discovery=await collect(`Identify direct competitors of ${business.name} (${business.domain}). Explain the business category and name up to 8 competing products serving similar customers. Cite sources. Profile context: ${String(business.description||'').slice(0,600)}`);await save(state);if(stepped)return send(200,result());}
      if(!report.questions.length){
       const plan=await analyze('Extract a business category and up to 8 direct competitor names from the supplied research answer. Each competitor must have a verbatim evidence excerpt from that answer. Include its official website domain only when supported by the supplied source URLs; otherwise use an empty domain. Exclude the own brand. Generate exactly 3 distinct unbranded buyer questions specific to this category: discovery, comparison, and purchase decision. Do not include ANY brand names or domains in questions. These questions will measure spontaneous brand visibility.',{business,research:report.discovery.answer.slice(0,15000),sources:report.discovery.sources},discoverySchema);
       report.discoveryPlan=plan;await save(state);
@@ -283,16 +284,16 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
       competitors=validateCompetitors([...new Set(found.map(c=>c.name))],business.name);
       if(!competitors.length)throw new Error('No usable competitor evidence was returned.');
       if(plan.questions.length!==3||plan.questions.some(q=>!q.trim()||q.length>1000))throw new Error('The buyer questions could not be prepared.');
-      report.questions=plan.questions;report.category=plan.category;report.suggestions=found;state.competitors={...state.competitors,[business.domain]:competitors};await save(state);
+      report.questions=plan.questions;report.category=plan.category;report.suggestions=found;state.competitors={...state.competitors,[business.domain]:competitors};await save(state);if(stepped)return send(200,result());
      }
      for(let i=0;i<report.questions.length;i++){
       if(report.completed.includes(i))continue;
       const prompt=report.questions[i];
       let saved=state.answers.find(r=>r.domain===business.domain&&r.baselineId===report.startedAt&&r.questionIndex===i);
-      if(!saved){const answer=await collect(prompt);answer.topic=['Discovery','Comparison','Buying decisions'][i];answer.type='Unbranded';saved={domain:business.domain,answer,baselineId:report.startedAt,questionIndex:i};state.answers.push(saved);await save(state);}
+      if(!saved){const answer=await collect(prompt);answer.assessmentPending=true;answer.topic=['Discovery','Comparison','Buying decisions'][i];answer.type='Unbranded';saved={domain:business.domain,answer,baselineId:report.startedAt,questionIndex:i};state.answers.push(saved);await save(state);if(stepped)return send(200,result());}
       const names=[business.name,...competitors];
       const assessment=await analyze('Analyze how each supplied brand is represented in this answer using its aliases. Distinguish the specific business from unrelated names. A short ordinary word is not a brand unless its surrounding text clearly identifies that company. Mention, sentiment and position each need a VERBATIM supporting excerpt copied from the answer. Sentiment describes the answer portrayal, not your view. Position is ONLY an explicit ordered recommendation rank, never search-result order or order of casual mention. Return null for absent/ambiguous rankings and Not assessed for uncertain sentiment. Return an entry for every supplied brand.',{brands:names,aliases:aliases(),answer:saved.answer.answer.slice(0,20000)},assessmentSchema);
-      saved.answer=applyAssessment(saved.answer,assessment,names,business.name,aliases());report.completed.push(i);await save(state);
+      saved.answer=applyAssessment(saved.answer,assessment,names,business.name,aliases());report.completed.push(i);await save(state);if(stepped&&report.completed.length<3)return send(200,result());
      }
      report.status='complete';report.finishedAt=new Date().toISOString();await save(state);
     }catch(e){report.status='partial';report.error=/^(OpenAI|SearchAPI|No usable|The buyer)/.test(e.message)?e.message:'The baseline could not finish. Saved evidence has been preserved.';await save(state);}
