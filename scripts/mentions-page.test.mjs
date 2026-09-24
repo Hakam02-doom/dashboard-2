@@ -26,6 +26,14 @@ test("Mentions page renders measured evidence and reference controls without inv
     assert.match(html, /2 responses/);
     assert.match(html, /Learn/);
     assert.doesNotMatch(html, /vs previous period/);
+    const { InsightPages } = await vite.ssrLoadModule("/src/InsightPages.jsx");
+    const wrapped = renderToStaticMarkup(React.createElement(InsightPages, {
+      tab:1, rows, prior:[], business:{name:"Nike",domain:"nike.com"},
+      brand:"Nike", cadence:"Daily", plan:{questions:[{id:"q1",intent:"Discovery"}]},
+      annotations:{}, reviews:{}, library:[], onReview:async()=>{},
+      onTrack:async()=>{}, evidence:null, onClearEvidence:()=>{},
+    }));
+    assert.match(wrapped, /Decision Journey/);
   } finally {
     await vite.close();
   }

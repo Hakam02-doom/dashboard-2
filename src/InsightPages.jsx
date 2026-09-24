@@ -1735,6 +1735,7 @@ export function InsightPages({
   business,
   brand,
   cadence,
+  plan,
   annotations,
   reviews,
   library,
