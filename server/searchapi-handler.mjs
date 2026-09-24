@@ -265,8 +265,8 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
     saved.answer={...applyAssessment(saved.answer,assessment,names,business.name,aliases()),promptId:q.id,measurementProfile:profile};await save(state);return send(200,result());
    }
    if(action==='baseline'){
-    if(shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
     if(state.reports?.[business.domain]?.status==='complete')return send(200,result());
+    if(shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
     if(!analysisKey)throw Error('OpenAI analysis is not configured.');
 
     const report=state.reports?.[business.domain]||{status:'pending',questions:[],completed:[],startedAt:new Date().toISOString()};

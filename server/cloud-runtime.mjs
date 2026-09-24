@@ -8,18 +8,18 @@ import {cloudCollectorStore,cloudBudgetStore,localCollectorStore} from './collec
 import {searchapiHandler} from './searchapi-handler.mjs';
 const localOrigins=['http://127.0.0.1:5174','http://localhost:5174'];
 export function serverClient(env){const url=env.VITE_SUPABASE_URL||env.SUPABASE_URL,key=env.SUPABASE_SERVICE_ROLE_KEY;return url&&key?createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}):null;}
-function unavailable(){const error=new Error('Monitoring sign-in is temporarily unavailable. Your email confirmation is still valid; retry the connection shortly.');error.status=503;return error;}
+function unavailable(){const error=new Error('The monitoring service is temporarily unavailable. Please try again shortly.');error.status=503;return error;}
 async function authUser(client,token){
  let timer;
  try{return await Promise.race([client.auth.getUser(token),new Promise((_,reject)=>{timer=setTimeout(()=>reject(unavailable()),25000);})]);}
  finally{clearTimeout(timer);}
 }
 export async function verifiedUser(req,client){
- const token=String(req.headers.authorization||'').replace(/^Bearer /,'');if(!token)throw Error('Sign in to AI Visibility to access cloud monitoring.');
+ const token=String(req.headers.authorization||'').replace(/^Bearer /,'');if(!token)throw Error('Your workspace is not ready. Refresh the page to reconnect.');
  let result;try{result=await authUser(client,token);}catch{throw unavailable();}
  const {data,error}=result;
  if(error&&(error.status>=500||error.status===0||error.name==='AuthRetryableFetchError'||/fetch failed|network|timed? out|gateway/i.test(error.message||'')))throw unavailable();
- if(error||!data?.user)throw Error('Your session expired. Sign in again.');
+ if(error||!data?.user)throw Error('Your session expired. Refresh the page to reconnect.');
  return data.user;
 }
 function send(res,status,body){res.statusCode=status;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(body));}
@@ -56,7 +56,7 @@ export function createRuntime(env,{local=false,directory='.local-ai'}={}){
   let body;try{body=await readJsonBody(req);}catch(e){return send(res,e.message==='Request too large.'?413:400,{error:e.message});}
   const {data:workspace,error}=await client.from('ai_collector_workspaces').select('owner_id').eq('owner_id',user.id).maybeSingle().abortSignal(AbortSignal.timeout(10000));
   if(error)return send(res,503,{error:'Monitoring storage is temporarily unavailable. Please retry shortly.'});
-  if(!workspace)return send(res,403,{error:'Connect this account to AI Visibility first.'});
+  if(!workspace)return send(res,403,{error:'Your workspace is still being prepared. Please try again.'});
   return runCollector(internalRequest(body),res,user.id);
  },async connections(req,res){
   if(req.method!=='POST')return send(res,405,{error:'Use POST.'});
@@ -65,8 +65,8 @@ export function createRuntime(env,{local=false,directory='.local-ai'}={}){
   if(body.action==='status'){let reachable=false,linked=false;try{if(client){const {data,error}=await client.from('ai_collector_store').select('owner_id').eq('id',true).single().abortSignal(AbortSignal.timeout(10000));reachable=!error;linked=!!data?.owner_id;}}catch{}return send(res,200,{directCollectors:directStatus(direct),googleTrafficConfigured:googleTraffic.configured,googleServiceAccount:googleTraffic.serviceAccount,storage:client?'cloud':localStore.kind,cloudConfigured:!!client,cloudReachable:reachable,ownerLinked:linked,searchConfigured:!!env.SEARCHAPI_API_KEY,analysisConfigured:!!env.OPENAI_API_KEY,budget:Math.min(15,Number(env.AI_ANALYSIS_BUDGET_USD||1)),scheduling:true,keywordMode:'csv'});}
   if(body.action==='claim'&&client){
    let user;try{user=await verifiedUser(req,client);}catch(e){return send(res,e.status===503?503:401,{error:e.message});}
-   let result;try{result=await claimWorkspace(client,user.id);}catch{return send(res,503,{error:'Monitoring storage is temporarily unavailable. Your sign-in is still valid; try connecting again.'});}
-   if(result.error)return send(res,503,{error:'Monitoring storage is temporarily unavailable. Your sign-in is still valid; try connecting again.'});
+   let result;try{result=await claimWorkspace(client,user.id);}catch{return send(res,503,{error:'Monitoring storage is temporarily unavailable. Your saved results are safe; please try again.'});}
+   if(result.error)return send(res,503,{error:'Monitoring storage is temporarily unavailable. Your saved results are safe; please try again.'});
    return send(res,200,{connected:true,legacyOwner:result.data===true});
   }return send(res,400,{error:'Unknown connection action.'});
  },async cron(req,res){

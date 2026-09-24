@@ -11,14 +11,14 @@ async function currentUser() {
  try{response=await Promise.race([aiCloud.auth.getUser(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('The monitoring connection is taking too long. Please try again shortly.')),20000);})]);}
  finally{clearTimeout(timer);}
  const {data,error}=response;
- if(error||!data.user)throw new Error('Sign in to AI Visibility to use cloud storage.');
+ if(error||!data.user)throw new Error('Your workspace connection expired. Refresh the page to reconnect.');
  return data.user;
 }
 export async function saveCloudBusiness(profile) {
  if(!validBusiness(profile))throw new Error('Review the business profile before saving.');
  const user=await currentUser();
  const {data,error}=await aiCloud.from('ai_businesses').upsert({owner_id:user.id,domain:profile.domain,name:profile.name,profile},{onConflict:'owner_id,domain'}).select('id').single().abortSignal(AbortSignal.timeout(20000));
- if(error)throw new Error('The business could not be saved to your account. Please retry.');
+ if(error)throw new Error('The business details could not be saved. Please retry.');
  return data.id;
 }
 export async function loadCloudBusinesses() {

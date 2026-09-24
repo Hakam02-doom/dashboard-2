@@ -12,7 +12,7 @@ const pct = n => n == null ? '—' : `${n.toFixed(1)}%`;
 function Brand({brand,color}) { return <span className="avr-brand"><BrandLogo name={brand.name} domain={brand.domain}/>{brand.name}{brand.own&&<small>You</small>}</span>; }
 function Switch({label,value,onChange,options}) { return <div className="avr-switch" role="group" aria-label={label}>{options.map(([key,Icon,name])=><button key={key} type="button" aria-label={name} title={name} aria-pressed={value===key} onClick={()=>onChange(key)}><Icon size={15}/></button>)}</div>; }
 function Card({title,Icon,note,controls,footer,children}) { return <section className="panel avr-card"><header><Icon size={17}/><h3>{title}</h3><Info size={13} className="avr-info" aria-hidden="true"/><span>{note}</span>{controls}</header><div className="avr-card-body">{children}</div><footer>{footer}</footer></section>; }
-function Missing({position=false}) { return <div className="avr-missing">{position?'No position data available':'No measurements collected yet'}<span>{position?'Ranked answers will appear here.':'Connect monitoring or enable the sample preview.'}</span></div>; }
+function Missing({position=false}) { return <div className="avr-missing">{position?'No position data available':'No measurements collected yet'}<span>{position?'Ranked answers will appear here.':'No measured answers match this view. Adjust the filters or collect more answers.'}</span></div>; }
 function Score({label,value}) { return <div className="avr-score"><span>{label}</span><strong>{value}</strong></div>; }
 function Chart({rows,brands,selected,metric='visibility',compare=false,cadence='Daily',colorFor}) {
   const chartRef=useRef(null),[width,setWidth]=useState(635);

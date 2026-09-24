@@ -16,7 +16,7 @@ export function createWebsiteApiHandler({client=serverClient(process.env),analyz
   try{user=await verifiedUser(req,client);}catch(e){return send(res,401,{error:e.message});}
   const {data:workspace,error:workspaceError}=await client.from('ai_collector_workspaces').select('owner_id').eq('owner_id',user.id).maybeSingle();
   if(workspaceError)return send(res,503,{error:'Monitoring storage is temporarily unavailable.'});
-  if(!workspace)return send(res,403,{error:'Connect this account to AI Visibility first.'});
+  if(!workspace)return send(res,403,{error:'Your workspace is still being prepared. Please try again.'});
   let url;
   try{url=websiteUrl((await readJsonBody(req,4096)).url).href;}catch(e){return send(res,400,{error:/^(Enter|Use)/.test(e.message)?e.message:'Enter a valid website.'});}
   const store=cloudCollectorStore(client,user.id);

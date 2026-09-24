@@ -13,7 +13,7 @@ test('each valid session identifies its own monitoring account',async()=>{
  const client={auth:{getUser:async token=>token==='expired'?{data:{user:null},error:{message:'expired'}}:{data:{user:{id:token}}}}};
  assert.equal((await verifiedUser({headers:{authorization:'Bearer owner'}},client)).id,'owner');
  assert.equal((await verifiedUser({headers:{authorization:'Bearer another'}},client)).id,'another');
- await assert.rejects(()=>verifiedUser({headers:{}},client),/Sign in/);
+ await assert.rejects(()=>verifiedUser({headers:{}},client),/workspace is not ready/);
  await assert.rejects(()=>verifiedUser({headers:{authorization:'Bearer expired'}},client),/expired/);
 });
 test('cloud collector RPCs are bound to the verified account and use one shared budget',async()=>{
