@@ -19,7 +19,7 @@ export function normalizeAnswer(data, business, prompt, engine='chatgpt') {
   const mentioned = (` ${normalize(data.markdown)} `).includes(` ${normalize(business.name)} `);
   return { id: data.search_metadata.id, at: new Date().toISOString(), engine:({chatgpt:'ChatGPT Search',gemini:'Gemini',perplexity:'Perplexity'})[engine], method:`SearchAPI · ${engine}`, prompt, answer:data.markdown, mentioned, cited:sources.some(s=>{const h=new URL(s).hostname.replace(/^www\./,'');return h===business.domain||h.endsWith('.'+business.domain);}), position:null, sentiment:'Not assessed', topic:'Manual scans', type:normalize(prompt).includes(normalize(business.name))?'Branded':'Unbranded', location:'Not specified', sources, fanout:(data.search_queries||[]).filter(q=>typeof q==='string'), competitors:[], comparisonAssessed:false, webSearchPerformed:data.response_metadata?.is_web_search_performed===true, model:data.response_metadata?.model||null };
 }
-export function searchapiHandler({local=false, key='', analysisKey='', analysisBudget=1, direct={}, googleTraffic=null, directory, store, request=fetch, crawl=crawlCoverage}={}) {
+export function searchapiHandler({local=false, key='', analysisKey='', analysisBudget=1, direct={}, googleTraffic=null, directory, store, budgetStore=null, request=fetch, crawl=crawlCoverage}={}) {
  const budget=Number.isFinite(analysisBudget)&&analysisBudget>0?Math.min(analysisBudget,15):1;
  const maximumAnalysisAttempts=Math.floor(budget/0.05);
  let busy=false;
@@ -44,6 +44,8 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
     busy=true;ownsLock=true;leaseToken=await storage.acquire();if(!leaseToken)return send(429,{error:'A collection worker is already running.'});
    }
    const state=await load();
+   const shared=budgetStore?await budgetStore.usage():{search:state.attempts||0,analysis:state.analysisAttempts||0,direct:state.directAttempts||0};
+   const reserveShared=async(kind,limit,message)=>{if(shared[kind]>=limit||budgetStore&&!(await budgetStore.reserve(kind,limit)))throw Error(message);shared[kind]++;};
    if(rollbackOnboarding(state)&&action!=='list')await save(state);
    if(action==='scheduleTick'){
     currentJob=enqueueDue(state);jobState=state;
@@ -55,7 +57,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
 
    let competitors=state.competitors?.[business.domain] ?? initialCompetitors(business.domain);
    const profile=state.measurementProfiles?.[business.domain]||null;
-   const result=()=>({directCollectors:directStatus(direct,state),googleTrafficConfigured:!!googleTraffic?.configured,googleServiceAccount:googleTraffic?.serviceAccount||null,googleProperties:state.googleProperties?.[business.domain]||{ga4PropertyId:'',gscSiteUrl:''},storage:storage.kind,sourceMetadata:state.sourceMetadata?.[business.domain]||{},insightAnnotations:state.insightAnnotations?.[business.domain]||{},factReviews:state.factReviews?.[business.domain]||{},opportunityActions:state.opportunityActions?.[business.domain]||{},library:state.libraries?.[business.domain]||null,coverage:state.coverage?.[business.domain]||{},crawl:state.crawls?.[business.domain]?{at:state.crawls[business.domain].at,scope:state.crawls[business.domain].scope}:null,schedule:state.schedules?.[business.domain]||null,jobs:(state.jobs||[]).filter(j=>j.business.domain===business.domain).slice(-50),measurementProfile:state.measurementProfiles?.[business.domain]||null,analysisBudget:{limit:budget,estimatedCost:state.analysisCost||0,reserved:(state.analysisAttempts||0)*0.05},plan:state.plans?.[business.domain]||null,report:state.reports?.[business.domain]||null,analysisConfigured:!!analysisKey,competitors,answers:state.answers.filter(r=>r.domain===business.domain).map(r=>({...r.answer.brandAssessment?refreshPositions(r.answer,business.name):compareAnswer(r.answer,business,competitors),sourceMetadata:state.sourceMetadata?.[business.domain]||{}})),configured:!!key,attemptsRemaining:Math.max(0,100-state.attempts)});
+   const result=()=>({directCollectors:directStatus(direct,{...state,directAttempts:shared.direct}),googleTrafficConfigured:!!googleTraffic?.configured,googleServiceAccount:googleTraffic?.serviceAccount||null,googleProperties:state.googleProperties?.[business.domain]||{ga4PropertyId:'',gscSiteUrl:''},storage:storage.kind,sourceMetadata:state.sourceMetadata?.[business.domain]||{},insightAnnotations:state.insightAnnotations?.[business.domain]||{},factReviews:state.factReviews?.[business.domain]||{},opportunityActions:state.opportunityActions?.[business.domain]||{},library:state.libraries?.[business.domain]||null,coverage:state.coverage?.[business.domain]||{},crawl:state.crawls?.[business.domain]?{at:state.crawls[business.domain].at,scope:state.crawls[business.domain].scope}:null,schedule:state.schedules?.[business.domain]||null,jobs:(state.jobs||[]).filter(j=>j.business.domain===business.domain).slice(-50),measurementProfile:state.measurementProfiles?.[business.domain]||null,analysisBudget:{limit:budget,estimatedCost:state.analysisCost||0,reserved:shared.analysis*0.05},plan:state.plans?.[business.domain]||null,report:state.reports?.[business.domain]||null,analysisConfigured:!!analysisKey,competitors,answers:state.answers.filter(r=>r.domain===business.domain).map(r=>({...r.answer.brandAssessment?refreshPositions(r.answer,business.name):compareAnswer(r.answer,business,competitors),sourceMetadata:state.sourceMetadata?.[business.domain]||{}})),configured:!!key,attemptsRemaining:Math.max(0,100-shared.search)});
    if(action==='list')return send(200,result());
    if(action==='googleProperties'){let properties;try{properties=validateGoogleProperties(body.properties,business.domain);}catch(e){return send(400,{error:e.message});}state.googleProperties={...state.googleProperties,[business.domain]:properties};await save(state);return send(200,result());}
    if(action==='trafficReport'){
@@ -82,21 +84,21 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
    }
    if(action==='measurementProfile'){let reviewed;try{reviewed=validateMeasurementProfile(body.profile,[business.name,...competitors]);}catch(e){return send(400,{error:e.message});}state.measurementProfiles={...state.measurementProfiles,[business.domain]:reviewed};await save(state);return send(200,result());}
    if(action==='competitors'){try{competitors=validateCompetitors(body.competitors,business.name);}catch(e){return send(400,{error:e.message});}state.competitors={...state.competitors,[business.domain]:competitors};await save(state);return send(200,result());}
-   const reserve=async()=>{if((state.analysisAttempts||0)>=maximumAnalysisAttempts)throw new Error('OpenAI pilot budget reached. No more analysis requests will run.');state.analysisAttempts=(state.analysisAttempts||0)+1;await save(state);};
+   const reserve=async()=>{await reserveShared('analysis',maximumAnalysisAttempts,'OpenAI pilot budget reached. No more analysis requests will run.');state.analysisAttempts=(state.analysisAttempts||0)+1;await save(state);};
    const analyze=async(instructions,input,schema)=>{const data=await analyzeJSON({key:analysisKey,instructions,input,schema,reserve,request});state.analysisCost=(state.analysisCost||0)+data.cost;await save(state);return data.result;};
    const collect=async(prompt,engine='chatgpt')=>{
-    if(DIRECT_ENGINES.includes(engine))return collectDirect({engine,config:direct,business,prompt,request,reserve:async()=>{if((state.directAttempts||0)>=(direct.limit||0))throw Error('Direct collector: request allowance reached.');state.directAttempts=(state.directAttempts||0)+1;await save(state);}});
+    if(DIRECT_ENGINES.includes(engine))return collectDirect({engine,config:direct,business,prompt,request,reserve:async()=>{await reserveShared('direct',direct.limit||0,'Direct collector: request allowance reached.');state.directAttempts=(state.directAttempts||0)+1;await save(state);}});
     if(!key)throw new Error('SearchAPI is not configured.');
-    if(state.attempts>=100)throw new Error('SearchAPI local pilot limit reached.');
+    if(shared.search>=100)throw new Error('SearchAPI local pilot limit reached.');
     const account=await provider('/api/v1/me');
     if(account.subscription||account.account?.monthly_allowance!==0||!(account.account?.remaining_credits>0))throw new Error('SearchAPI free-trial access could not be confirmed.');
-    state.attempts++;await save(state);
+    await reserveShared('search',100,'SearchAPI local pilot limit reached.');state.attempts++;await save(state);
     const row=normalizeAnswer(await provider('/api/v1/search?'+new URLSearchParams({engine,q:prompt,...(engine==='chatgpt'?{web_search:'true'}:{})})),business,prompt,engine);
     if(!row.id||state.answers.some(r=>r.domain===business.domain&&r.answer.engine===row.engine&&r.answer.id===row.id))throw Error('SearchAPI returned a cached answer. It was not counted as a new observation.');
     return row;
    };
    if(action==='classifySources'){
-    if((state.analysisAttempts||0)>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No source reads were started.');
+    if(shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No source reads were started.');
     const urls=[...new Set(state.answers.filter(r=>r.domain===business.domain).flatMap(r=>r.answer.sources||[]))].filter(url=>!state.sourceMetadata?.[business.domain]?.[url]).slice(0,3),pages=[];
     state.sourceMetadata ||= {};state.sourceMetadata[business.domain] ||= {};
     for(const url of urls){try{const page=await fetchWebsite(url);const parsed=coveragePage(page.html,page.url);pages.push({...parsed,url,text:parsed.text.slice(0,4000)});}catch{state.sourceMetadata[business.domain][url]={contentType:'Unclassified',status:'unavailable',at:new Date().toISOString(),method:'Public page could not be read'};}}
@@ -144,7 +146,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
     const today=new Date().toISOString().slice(0,10);
     let saved=state.answers.find(r=>r.domain===business.domain&&(r.collectionEngine||'chatgpt')===collectionEngine&&normalize(r.answer.prompt)===normalize(q.text)&&r.answer.at.slice(0,10)===today);
     if(saved?.answer.brandAssessment){await finishJob();return send(200,result());}
-    if((state.analysisAttempts||0)>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
+    if(shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
     if(!saved){const answer=await collect(q.text.trim(),collectionEngine);answer.topic=q.topic;answer.type=[business.name,business.domain,...competitors,...Object.values(profile?.aliases||{}).flat()].some(name=>namedEvidence(q.text,name))?'Branded':q.type;saved={domain:business.domain,collectionEngine,answer};state.answers.push(saved);await save(state);}
     const names=[business.name,...competitors];
     const assessment=await analyze('Assess each supplied brand in the answer. Return an entry for every brand. Copy verbatim mention and sentiment evidence. Position must be an explicit numbered brand recommendation; never use numbered topic headings or casual mention order. Unknown sentiment is Not assessed; unknown rank is null.',{brands:names,aliases:profile?.aliases||{},answer:saved.answer.answer.slice(0,20000)},assessmentSchema);
@@ -163,20 +165,20 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
     if(!q)return send(400,{error:'Choose a question from your plan.'});
     let saved=state.answers.find(r=>r.domain===business.domain&&r.promptId===q.id&&(r.collectionEngine||'chatgpt')===collectionEngine&&r.answer.at.slice(0,10)===new Date().toISOString().slice(0,10));
     if(saved?.answer.brandAssessment){await finishJob();return send(200,result());}
-    if((state.analysisAttempts||0)>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
+    if(shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
     if(!saved){const answer=await collect(q.text,collectionEngine);answer.topic=q.topic;answer.type='Unbranded';saved={domain:business.domain,promptId:q.id,collectionEngine,answer};state.answers.push(saved);await save(state);}
     const names=[business.name,...competitors];
     const assessment=await analyze('Assess each supplied brand in the answer. Return an entry for every brand. Copy verbatim mention and sentiment evidence. Position must be an explicit numbered brand recommendation; never use numbered topic headings or casual mention order. Unknown sentiment is Not assessed; unknown rank is null.',{brands:names,aliases:profile?.aliases||{},answer:saved.answer.answer.slice(0,20000)},assessmentSchema);
     saved.answer={...applyAssessment(saved.answer,assessment,names,business.name,profile?.aliases||{}),promptId:q.id,measurementProfile:profile};await save(state);return send(200,result());
    }
    if(action==='baseline'){
-    if((state.analysisAttempts||0)>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
+    if(shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
     if(state.reports?.[business.domain]?.status==='complete')return send(200,result());
     if(!analysisKey)throw Error('OpenAI analysis is not configured.');
 
     const report=state.reports?.[business.domain]||{status:'pending',questions:[],completed:[],startedAt:new Date().toISOString()};
     const needed=(report.discovery?0:1)+3-state.answers.filter(r=>r.domain===business.domain&&r.baselineId===report.startedAt).length;
-    if(state.attempts+needed>100)return send(429,{error:'Not enough local trial attempts remain to finish this report.'});
+    if(shared.search+needed>100)return send(429,{error:'Not enough shared trial attempts remain to finish this report.'});
     state.reports={...state.reports,[business.domain]:report};report.status='running';report.error='';await save(state);
     try{
      if(!report.discovery){report.discovery=await collect(`Identify direct competitors of ${business.name} (${business.domain}). Explain the business category and name up to 8 competing products serving similar customers. Cite sources. Profile context: ${String(business.description||'').slice(0,600)}`);await save(state);}
@@ -206,11 +208,11 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
    if(action!=='scan')return send(400,{error:'Unknown action.'});
    if(!key)return send(503,{error:'SearchAPI is not configured on this server.'});
    if(typeof body.prompt!=='string'||!body.prompt.trim()||body.prompt.length>1000)return send(400,{error:'Enter a question of up to 1,000 characters.'});
-   if(state.attempts>=100)return send(429,{error:'The local pilot limit of 100 attempts has been reached. No more requests will run.'});
+   if(shared.search>=100)return send(429,{error:'The shared pilot limit of 100 attempts has been reached. No more requests will run.'});
    const account=await provider('/api/v1/me');
    if(account.subscription || !Number.isFinite(account.account?.remaining_credits) || account.account.remaining_credits<1 || account.account.monthly_allowance!==0)return send(402,{error:'Free-trial access could not be confirmed. No scan was started.'});
    // Reserve before sending: timeouts and failed saves cannot silently spend extra trial credits.
-   state.attempts++;await save(state);
+   await reserveShared('search',100,'SearchAPI local pilot limit reached.');state.attempts++;await save(state);
    const data=await provider('/api/v1/search?'+new URLSearchParams({engine:'chatgpt',q:body.prompt.trim(),web_search:'true'}));
    const answer=normalizeAnswer(data,business,body.prompt.trim());
    state.answers.push({domain:business.domain,answer});await save(state);

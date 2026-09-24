@@ -8,10 +8,21 @@ test('coverage stays same-origin, bounded, and requires verbatim supporting evid
 test('library revision conflicts preserve existing data and pausing cancels queued jobs',async()=>{const directory=await mkdtemp(join(tmpdir(),'d2-library-'));try{const store=localCollectorStore(directory),h=searchapiHandler({local:true,store});const row={...question,id:'q',status:'saved',tracking:true};let r=await call(h,{action:'library',business,rows:[row],revision:0});assert.equal(r.body.library.revision,1);assert.equal((await call(h,{action:'library',business,rows:[],revision:0})).statusCode,409);await call(h,{action:'schedule',business,schedule:{enabled:true,cadence:'daily',engines:['chatgpt'],questions:[question]}});await call(h,{action:'library',business,rows:[{...row,tracking:false}],revision:1});assert.equal((await store.load()).schedules[business.domain].enabled,false);}finally{await rm(directory,{recursive:true});}});
 test('worker failures pause scheduling and cannot be triggered by public request bodies',async()=>{const directory=await mkdtemp(join(tmpdir(),'d2-worker-'));try{const store=localCollectorStore(directory);const schedule={...validateSchedule({enabled:true,cadence:'daily',engines:['gemini'],questions:[question]},business),nextAt:'2000-01-01'};await store.save({attempts:0,answers:[],schedules:{[business.domain]:schedule}});const h=searchapiHandler({local:true,store,key:'test',analysisKey:'test',request:async url=>url.includes('/me')?{ok:true,json:async()=>({account:{remaining_credits:9,monthly_allowance:0}})}:{ok:false,status:503}});assert.equal((await call(h,{action:'scheduleTick',business})).statusCode,403);const r=await call(h,{action:'scheduleTick',business},true);assert.equal(r.statusCode,502);const state=await store.load();assert.equal(state.jobs[0].status,'failed');assert.equal(state.schedules[business.domain].enabled,false);assert.equal(state.attempts,1);await call(h,{action:'scheduleTick',business},true);assert.equal((await store.load()).attempts,1);}finally{await rm(directory,{recursive:true});}});
 
-test('cloud ownership validates the session and denies another account',async()=>{
- const {verifiedOwner}=await import('../server/cloud-runtime.mjs');
- const client={auth:{getUser:async token=>({data:{user:token==='valid'?{id:'owner'}:{id:'other'}}})},from:()=>({select:()=>({eq:()=>({single:async()=>({data:{owner_id:'owner'}})})})})};
- assert.equal((await verifiedOwner({headers:{authorization:'Bearer valid'}},client)).id,'owner');
- await assert.rejects(()=>verifiedOwner({headers:{}},client),/Sign in/);
- await assert.rejects(()=>verifiedOwner({headers:{authorization:'Bearer wrong'}},client),/not the Dashboard 2/);
+test('each valid session identifies its own monitoring account',async()=>{
+ const {verifiedUser}=await import('../server/cloud-runtime.mjs');
+ const client={auth:{getUser:async token=>token==='expired'?{data:{user:null},error:{message:'expired'}}:{data:{user:{id:token}}}}};
+ assert.equal((await verifiedUser({headers:{authorization:'Bearer owner'}},client)).id,'owner');
+ assert.equal((await verifiedUser({headers:{authorization:'Bearer another'}},client)).id,'another');
+ await assert.rejects(()=>verifiedUser({headers:{}},client),/Sign in/);
+ await assert.rejects(()=>verifiedUser({headers:{authorization:'Bearer expired'}},client),/expired/);
+});
+test('cloud collector RPCs are bound to the verified account and use one shared budget',async()=>{
+ const {cloudCollectorStore,cloudBudgetStore}=await import('../server/collector-store.mjs');
+ const calls=[],client={rpc:async(name,args)=>{calls.push({name,args});return {data:name==='ai_global_usage'?{search:55,analysis:72,direct:0}:name==='ai_global_reserve'?false:name==='ai_workspace_read'?{attempts:0,answers:[]}:null};}};
+ const first=cloudCollectorStore(client,'owner'),second=cloudCollectorStore(client,'another');
+ await first.load();await second.load();
+ assert.deepEqual(calls.slice(0,2).map(call=>call.args.account_id),['owner','another']);
+ const budget=cloudBudgetStore(client);assert.equal((await budget.usage()).search,55);
+ assert.equal(await budget.reserve('search',100),false);
+ assert.deepEqual(calls.at(-1).args,{counter:'search',maximum:100});
 });

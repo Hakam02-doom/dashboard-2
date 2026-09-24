@@ -11,7 +11,12 @@ export function localCollectorStore(directory='.local-ai') {
   async release(token){const prior=await readFile(lock,'utf8').then(JSON.parse).catch(()=>null);if(prior?.token===token)await unlink(lock);}
  };
 }
-export function cloudCollectorStore(client) {
+export function cloudCollectorStore(client,ownerId) {
  const rpc=async(name,args={})=>{const {data,error}=await client.rpc(name,args);if(error)throw Error('Saved scans cloud storage failed. Retry after checking the connection.');return data;};
- return {kind:'cloud',load:()=>rpc('ai_collector_read'),acquire:()=>rpc('ai_collector_lock',{lease:randomUUID()}),save:(state,token)=>rpc('ai_collector_write',{payload:state,lease:token}),release:token=>rpc('ai_collector_unlock',{lease:token})};
+ if(!ownerId)throw Error('A verified account is required for cloud monitoring.');
+ return {kind:'cloud',load:()=>rpc('ai_workspace_read',{account_id:ownerId}),acquire:()=>rpc('ai_workspace_lock',{account_id:ownerId,lock_id:randomUUID()}),save:(state,token)=>rpc('ai_workspace_write',{account_id:ownerId,state,lock_id:token}),release:token=>rpc('ai_workspace_unlock',{account_id:ownerId,lock_id:token})};
+}
+export function cloudBudgetStore(client){
+ const rpc=async(name,args={})=>{const {data,error}=await client.rpc(name,args);if(error)throw Error('Shared collection budget could not be checked. No paid request was made.');return data;};
+ return {usage:()=>rpc('ai_global_usage'),reserve:(counter,maximum)=>rpc('ai_global_reserve',{counter,maximum})};
 }

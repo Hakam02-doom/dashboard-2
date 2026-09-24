@@ -1,4 +1,5 @@
 export const BUSINESS_KEY = 'd2-ai-businesses-v1';
+export const businessStorageKey = userId => `${BUSINESS_KEY}:${userId}`;
 export function publicWebsite(value) {
   const url = new URL(value.includes('://') ? value.trim() : `https://${value.trim()}`);
   if (url.protocol !== 'https:' || url.username || url.password || url.port || !url.hostname.includes('.') || /^\d[\d.]*$/.test(url.hostname) || url.hostname.includes(':') || /\.(local|localhost|internal|test|invalid)$/i.test(url.hostname)) throw new Error('Enter a public HTTPS website, such as example.com.');

@@ -4,13 +4,13 @@ import {aiCloud,loadCloudBusinesses,syncBusinessProfiles} from './ai-cloud';
 import React, { useState,useEffect } from 'react';
 import { Globe2, ArrowRight, Check, ArrowLeft, RefreshCw, Building2 } from 'lucide-react';
 import { AiWorkspace } from './AiWorkspace';
-import { BUSINESS_KEY, publicWebsite, validBusiness } from './ai-business';
+import { businessStorageKey, publicWebsite, validBusiness } from './ai-business';
 import './ai-insights.css';
 
 function originalProfile({onboarding,market,...profile}) { return profile; }
-function readBusinesses() {
+function readBusinesses(userId) {
   try {
-    const raw = localStorage.getItem(BUSINESS_KEY);
+    const raw = localStorage.getItem(businessStorageKey(userId));
     if (!raw) return { active: '', profiles: {}, error: '' };
     const data = JSON.parse(raw);
     if (!data || typeof data.active !== 'string' || !data.profiles || typeof data.profiles !== 'object' || !Object.values(data.profiles).every(validBusiness)) throw Error();
@@ -18,10 +18,11 @@ function readBusinesses() {
   } catch { return { active: '', profiles: {}, error: 'Saved business details could not be read. They have not been overwritten. Check browser storage access before saving.' }; }
 }
 export function AiVisibilityEntry(props) {
- return <AiSignInGate onExit={props.onExit}><AiVisibilityContent {...props}/></AiSignInGate>;
+ return <AiSignInGate onExit={props.onExit}>{(user,switchAccount)=><AiVisibilityContent {...props} key={user.id} userId={user.id} onSwitchAccount={switchAccount}/>}</AiSignInGate>;
 }
 function AiVisibilityContent(props) {
-  const [initial] = useState(readBusinesses);
+  const storageKey=businessStorageKey(props.userId);
+  const [initial] = useState(()=>readBusinesses(props.userId));
   const [businesses, setBusinesses] = useState(initial);
   const active = businesses.profiles[businesses.active];
   const [editing, setEditing] = useState(!active);
@@ -29,7 +30,7 @@ function AiVisibilityContent(props) {
   const [draft, setDraft] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(initial.error);
-  useEffect(()=>{let mounted=true;loadCloudBusinesses().then(rows=>{if(!mounted||!rows.length)return;setBusinesses(prev=>{const profiles={...prev.profiles};for(const row of rows)profiles[row.domain]=originalProfile(row.profile);const next={...prev,profiles,active:prev.active||rows[0].domain};try{localStorage.setItem(BUSINESS_KEY,JSON.stringify(next));}catch{}return next;});if(!initial.active)setEditing(false);}).catch(()=>{});return()=>{mounted=false;};},[]);
+  useEffect(()=>{let mounted=true;loadCloudBusinesses().then(rows=>{if(!mounted||!rows.length)return;setBusinesses(prev=>{const profiles={...prev.profiles};for(const row of rows)profiles[row.domain]=originalProfile(row.profile);const next={...prev,profiles,active:prev.active||rows[0].domain};try{localStorage.setItem(storageKey,JSON.stringify(next));}catch{}return next;});if(!initial.active)setEditing(false);}).catch(()=>{});return()=>{mounted=false;};},[storageKey]);
 
   async function analyze(event) {
     event.preventDefault(); setError(''); setDraft(null);
@@ -51,7 +52,7 @@ function AiVisibilityContent(props) {
     const profile=businesses.profiles[domain];
     if (!profile) return;
     const next={...businesses,active:domain};
-    try {localStorage.setItem(BUSINESS_KEY,JSON.stringify(next));}
+    try {localStorage.setItem(storageKey,JSON.stringify(next));}
     catch {setError('Could not save the selected website in this browser. Check browser storage access.');return;}
     setBusinesses(next);setUrl(profile.url);setDraft(null);setError('');setEditing(false);
   }
@@ -64,7 +65,7 @@ function AiVisibilityContent(props) {
     const returningToSavedBusiness = Boolean(businesses.profiles[profile.domain]);
     setBusy(true);
     try {
-      localStorage.setItem(BUSINESS_KEY, JSON.stringify(next));
+      localStorage.setItem(storageKey, JSON.stringify(next));
       await syncBusinessProfiles(next.profiles);
       if (returningToSavedBusiness) {
         setBusinesses(next);setEditing(false);setDraft(null);setError('');
@@ -80,7 +81,7 @@ function AiVisibilityContent(props) {
     finally {setBusy(false);}
   }
   if (editing) return <section className="cs-page ai-onboarding">
-    <div className="cs-page-intro"><div><h2>Every insight starts with your business.</h2><p>Add your website so your questions, sources, and insights share the right context.</p></div>{active && <button className="cs-button" onClick={() => { setEditing(false); setDraft(null); setError(''); }} disabled={busy}><ArrowLeft size={16}/>Back to insights</button>}</div>
+    <div className="cs-page-intro"><div><h2>Every insight starts with your business.</h2><p>Add your website so your questions, sources, and insights share the right context.</p></div><div className="pr-top-actions">{active && <button className="cs-button" onClick={() => { setEditing(false); setDraft(null); setError(''); }} disabled={busy}><ArrowLeft size={16}/>Back to insights</button>}<button className="cs-button" onClick={()=>props.onSwitchAccount().catch(e=>props.onToast(e.message||'Could not switch accounts.'))}>Switch account</button></div></div>
     <div className="aiv-intake-layout"><div className="panel aiv-intake">
       {Object.keys(businesses.profiles).length>0&&<section className="aiv-saved-sites" aria-label="Saved websites"><h3>Your saved websites</h3><p>Open an existing report without running another scan.</p><div>{Object.values(businesses.profiles).map(profile=><button type="button" key={profile.domain} className="cs-button" aria-current={profile.domain===businesses.active?'true':undefined} onClick={()=>openSaved(profile.domain)} disabled={busy}><strong>{profile.name}</strong><span>{profile.domain}</span><ArrowRight size={15}/></button>)}</div></section>}
       <span className="aiv-symbol"><Globe2 size={27}/></span><h3>Which website would you like to understand?</h3><p>We’ll read the public page and suggest a business profile for you to review.</p>
@@ -91,5 +92,5 @@ function AiVisibilityContent(props) {
       {draft && <form className="aiv-review" onSubmit={save}><div className="aiv-heading"><h3>Review your business</h3><span className="ai-tag">{draft.source === 'website' ? 'Website read' : 'Manual entry'}</span></div><p>Check these details before continuing. Then we’ll discover competitors and collect three shared buyer questions using ChatGPT Search. This uses up to four free search credits and the capped analysis budget.</p><label>Business name<input required maxLength={100} value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })}/></label><label>What your business offers<textarea rows={3} maxLength={600} value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })}/></label><div className="aiv-review-source"><Check size={16}/>{draft.domain}<span>{draft.headings.length} headings found</span></div><button className="cs-button filled" disabled={busy}>{busy?"Building your report…":"Build AI Insights"}<ArrowRight size={16}/></button></form>}
     </div><aside className="panel aiv-intake-aside"><h3>A clear path to AI visibility</h3><ol>{[['Understand your business','Review the name, website, and description we find.'],['Choose the right questions','Build a prompt library specific to your business.'],['Measure real answers','Connect a collector to track mentions, citations, and competitors.']].map(([title,copy]) => <li key={title}><Check size={17}/><div><strong>{title}</strong><p>{copy}</p></div></li>)}</ol><div className="aiv-aside-note"><Building2 size={20}/><p>Your existing dashboard content stays separate. Each website gets its own prompt library.</p></div><button className="ai-text-button" onClick={props.onSettings}>View required connections<ArrowRight size={15}/></button></aside></div>
   </section>;
-  return <><div className="aiv-business-bar"><span className="aiv-symbol"><Globe2 size={20}/></span><div><strong>{active.name}</strong><span>{active.domain} · AI visibility business</span></div><button className="cs-button" onClick={() => { setUrl(active.url); setEditing(true); }}>Change website</button></div><AiWorkspace {...props} key={active.domain} business={active}/></>;
+  return <><div className="aiv-business-bar"><span className="aiv-symbol"><Globe2 size={20}/></span><div><strong>{active.name}</strong><span>{active.domain} · AI visibility business</span></div><div className="aiv-business-actions"><button className="cs-button" onClick={() => { setUrl(active.url); setEditing(true); }}>Change website</button><button className="cs-button" onClick={()=>props.onSwitchAccount().catch(e=>props.onToast(e.message||'Could not switch accounts.'))}>Switch account</button></div></div><AiWorkspace {...props} key={active.domain} business={active}/></>;
 }
