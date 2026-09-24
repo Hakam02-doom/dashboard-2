@@ -1561,9 +1561,10 @@ function FanoutPage({ rows, business, library, onTrack, onAnswer, onDetail }) {
     </>
   );
 }
-function LocationPage({ rows, prior, business, onDetail, onAnswer }) {
+function LocationPage({ rows, prior, business, selectedLocation, onSelectLocation, onDetail, onAnswer }) {
   const [metric, setMetric] = useState("Visibility"),
     [zoom, setZoom] = useState(1),
+    [worldView, setWorldView] = useState(false),
     [world, setWorld] = useState(null);
   useEffect(() => {
     fetch("/world-regions.json")
@@ -1573,6 +1574,24 @@ function LocationPage({ rows, prior, business, onDetail, onAnswer }) {
   }, []);
   const places = unique(rows.map((r) => r.location || "Not specified")),
     known = places.filter((p) => !["Not specified", "Unknown", ""].includes(p));
+  const samePlace = (a, b) => {
+    const aliases = {"united states": "united states of america", "usa": "united states of america", "uk": "united kingdom"};
+    return (aliases[norm(a)] || norm(a)) === (aliases[norm(b)] || norm(b));
+  };
+  const activeLocation = selectedLocation || (known.length === 1 ? known[0] : "");
+  useEffect(() => { setZoom(1); setWorldView(false); }, [activeLocation]);
+  const activeFeature = !worldView && world?.features?.find((f) => samePlace(activeLocation, f.properties.ADMIN || f.properties.NAME));
+  const coordinates = activeFeature?.geometry.type === "Polygon"
+    ? activeFeature.geometry.coordinates.flat(1)
+    : activeFeature?.geometry.coordinates.flat(2) || [];
+  const xs = coordinates.map((point) => (point[0] + 180) * 2),
+    ys = coordinates.map((point) => (90 - point[1]) * 2);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const focusWidth = activeFeature ? Math.min(720, Math.max(112, (maxX - minX) * 1.35, (maxY - minY) * 2.7)) : 720;
+  const viewWidth = focusWidth / zoom, viewHeight = viewWidth / 2;
+  const centerX = activeFeature ? (minX + maxX) / 2 : 360,
+    centerY = activeFeature ? (minY + maxY) / 2 : 180;
+  const viewBox = `${Math.max(0, Math.min(720-viewWidth, centerX-viewWidth/2))} ${Math.max(0, Math.min(360-viewHeight, centerY-viewHeight/2))} ${viewWidth} ${viewHeight}`;
   const value = (rs) =>
     metric === "Visibility"
       ? rs.length
@@ -1581,10 +1600,14 @@ function LocationPage({ rows, prior, business, onDetail, onAnswer }) {
       : metric === "Sentiment"
         ? sentimentData(rs).score
         : rs.length;
-  const regions = places.map((name) => ({
+  const regions = known.map((name) => ({
     name,
     rows: rows.filter((r) => (r.location || "Not specified") === name),
   }));
+  const visibleRegions = activeLocation && !regions.some((r) => samePlace(r.name, activeLocation))
+    ? [{ name: activeLocation, rows: [] }, ...regions]
+    : regions;
+  const unlocatedCount = rows.filter((r) => !known.includes(r.location)).length;
   const open = (r) =>
     onDetail({
       title: r.name,
@@ -1628,24 +1651,19 @@ function LocationPage({ rows, prior, business, onDetail, onAnswer }) {
           ))}
         </select>
       }
-      footer={`${known.length} named regions · ${unique(rows.map((r) => r.prompt)).length} prompts · ${rows.length} responses`}
+      footer={`${known.length} measured ${known.length === 1 ? "region" : "regions"} · ${unique(rows.map((r) => r.prompt)).length} prompts · ${rows.length} responses`}
     >
       <div className="ip-location">
         <div className="ip-map">
-          <svg
-            viewBox="0 0 720 360"
+          {!activeLocation ? <div className="ip-map-prompt"><Globe2 size={30}/><strong>Select a location to explore the map</strong><span>Choose a country from the location menu above.</span></div> : <><svg
+            viewBox={viewBox}
             role="img"
-            aria-label="World map of explicitly recorded collection regions"
+            aria-label={`Map focused on ${activeLocation}. Highlighting is a selection, not a measured visibility score.`}
           >
-            <g
-              transform={`translate(${360 * (1 - zoom)} ${180 * (1 - zoom)}) scale(${zoom})`}
-            >
-              {world?.features?.map((f, i) => {
+            <g>{world?.features?.map((f, i) => {
                 const name = f.properties.ADMIN || f.properties.name,
                   region = regions.find(
-                    (r) =>
-                      norm(r.name) === norm(name) ||
-                      norm(r.name) === norm(f.properties.NAME),
+                    (r) => samePlace(r.name, name) || samePlace(r.name, f.properties.NAME),
                   );
                 return (
                   <path
@@ -1655,36 +1673,21 @@ function LocationPage({ rows, prior, business, onDetail, onAnswer }) {
                         ? path(f.geometry.coordinates)
                         : f.geometry.coordinates.map(path).join(" ")
                     }
-                    className={region ? "is-tracked" : ""}
-                    onClick={() => region && open(region)}
-                    tabIndex={region ? 0 : undefined}
-                    role={region ? "button" : undefined}
+                    className={samePlace(name, activeLocation) ? region ? "is-selected" : "is-selected is-unmeasured" : region ? "is-tracked" : ""}
+                    onClick={() => { setWorldView(false); onSelectLocation(name); }}
+                    tabIndex={0}
+                    role="button"
                     onKeyDown={(e) => {
-                      if (region && e.key === "Enter") open(region);
+                      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setWorldView(false); onSelectLocation(name); }
                     }}
                   >
-                    <title>
-                      {name}
-                      {region
-                        ? ": " + num(value(region.rows))
-                        : " · No regional observations"}
-                    </title>
+                    <title>{name}{region ? ` · ${region.rows.length} measured answers` : " · No regional observations"}</title>
                   </path>
                 );
               })}
             </g>
-          </svg>
-          {!known.length && (
-            <div className="ip-map-empty">
-              <Globe2 size={28} />
-              <strong>No regional measurements yet</strong>
-              <p>
-                Current answers do not include a verified collection location.
-                They remain in “Not specified” below.
-              </p>
-            </div>
-          )}
-          <div className="ip-map-controls">
+          </svg><div className="ip-map-caption"><strong>{activeLocation}</strong><span>{regions.find((r) => samePlace(r.name, activeLocation))?.rows.length || 0} regional answers</span></div></>}
+          {activeLocation && <div className="ip-map-controls">
             <button
               aria-label="Zoom in map"
               disabled={zoom >= 3}
@@ -1699,11 +1702,11 @@ function LocationPage({ rows, prior, business, onDetail, onAnswer }) {
             >
               <Minus size={16} />
             </button>
-            <button onClick={() => setZoom(1)}>World view</button>
-          </div>
+            <button onClick={() => { setZoom(1); setWorldView(true); }}>World view</button>
+          </div>}
         </div>
-        <Table headers={["Region", metric, "Change"]}>
-          {regions.map((r) => {
+        <div className="ip-location-side"><Table headers={["Region", metric, "Change"]}>
+          {visibleRegions.map((r) => {
             const before = prior.filter(
                 (a) => (a.location || "Not specified") === r.name,
               ),
@@ -1712,7 +1715,7 @@ function LocationPage({ rows, prior, business, onDetail, onAnswer }) {
             return (
               <tr key={r.name}>
                 <td>
-                  <button onClick={() => open(r)}>{r.name} ↗</button>
+                  <button onClick={() => { setWorldView(false); onSelectLocation(r.name); }}>{r.name} {samePlace(r.name, activeLocation) ? "✓" : "›"}</button>
                 </td>
                 <td>{metric === "Visibility" ? pct(v) : num(v)}</td>
                 <td>
@@ -1723,7 +1726,10 @@ function LocationPage({ rows, prior, business, onDetail, onAnswer }) {
               </tr>
             );
           })}
-        </Table>
+        </Table>{!visibleRegions.length && <p className="ip-location-note">Choose a country to see its place on the map.</p>}
+        {activeLocation && !regions.some((r) => samePlace(r.name, activeLocation)) && <p className="ip-location-note">No regional measurements for {activeLocation} yet. The map marks your selection; it does not infer a visibility score from answers without a location.</p>}
+        {unlocatedCount > 0 && <p className="ip-location-note">{unlocatedCount} saved {unlocatedCount === 1 ? "answer has" : "answers have"} no recorded location and are excluded from regional scores.</p>}
+        {regions.find((r) => samePlace(r.name, activeLocation)) && <button className="ip-location-evidence" onClick={() => open(regions.find((r) => samePlace(r.name, activeLocation)))}>View measured answers <ArrowUpRight size={14}/></button>}</div>
       </div>
     </Card>
   );
@@ -1736,6 +1742,8 @@ export function InsightPages({
   brand,
   cadence,
   plan,
+  selectedLocation,
+  onSelectLocation,
   annotations,
   reviews,
   library,
@@ -1792,6 +1800,8 @@ export function InsightPages({
     brand,
     cadence,
     plan,
+    selectedLocation,
+    onSelectLocation,
     annotations,
     reviews,
     library,

@@ -605,31 +605,47 @@
 }
 .ip-location {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(230px, 1fr);
-  gap: 24px;
+  grid-template-columns: minmax(0, 3fr) minmax(260px, 1fr);
+  gap: 0;
+  margin: -20px;
+  min-height: 470px;
 }
 .ip-map {
   position: relative;
-  min-height: 360px;
+  min-height: 470px;
   overflow: hidden;
-  border-radius: 16px;
-  background: var(--d2-surface-muted, #f3f4f8);
+  background: var(--d2-surface, #ffffff);
+  border-right: 1px solid var(--d2-line, #e5e7ef);
 }
-.ip-map svg {
+.ip-map > svg {
   display: block;
   width: 100%;
-  height: 360px;
+  height: 470px;
 }
-.ip-map path {
-  fill: var(--d2-line, #e5e7ef);
-  stroke: var(--d2-surface, #ffffff);
-  stroke-width: 0.6;
-}
-.ip-map path.is-tracked {
-  fill: var(--d2-purple-ink, #7c71b6);
+.ip-map > svg path {
+  fill: var(--d2-surface-muted, #f3f4f8);
+  stroke: var(--d2-line, #e5e7ef);
+  stroke-width: 0.7;
   cursor: pointer;
+  transition: fill 180ms ease;
 }
-.ip-map-empty {
+.ip-map > svg path.is-tracked {
+  fill: color-mix(in srgb, var(--d2-purple-ink, #7c71b6) 42%, var(--d2-surface, #fff));
+}
+.ip-map > svg path.is-selected, .ip-map > svg path.is-selected:hover {
+  fill: var(--d2-purple-ink, #7c71b6);
+  stroke: var(--d2-purple-ink, #7c71b6);
+}
+.ip-map > svg path.is-unmeasured, .ip-map > svg path.is-unmeasured:hover {
+  fill: color-mix(in srgb, var(--d2-purple-ink, #7c71b6) 18%, var(--d2-surface-muted, #f3f4f8));
+  stroke: var(--d2-purple-ink, #7c71b6);
+  stroke-width: 1.4;
+}
+.ip-map > svg path:hover, .ip-map > svg path:focus-visible {
+  fill: color-mix(in srgb, var(--d2-purple-ink, #7c71b6) 65%, var(--d2-surface, #fff));
+  outline: none;
+}
+.ip-map-prompt {
   position: absolute;
   inset: 0;
   display: flex;
@@ -637,19 +653,44 @@
   justify-content: center;
   text-align: center;
   flex-direction: column;
-  background: color-mix(in srgb, var(--d2-surface, #ffffff) 65%, transparent);
   padding: 25px;
-  gap: 12px;
-}
-.ip-map-empty p {
-  max-width: 40ch;
+  gap: 10px;
   color: var(--d2-muted, #697386);
-  font-size: 12px;
 }
+.ip-map-prompt strong { color: var(--d2-text, #292d38); font-size: 14px; }
+.ip-map-prompt svg { width: 30px; height: 30px; color: var(--d2-purple-ink, #7c71b6); }
+.ip-map-caption {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--d2-surface, #fff);
+  border: 1px solid var(--d2-line, #e5e7ef);
+  border-radius: 10px;
+  padding: 8px 12px;
+  box-shadow: 0 5px 22px #0001;
+  pointer-events: none;
+}
+.ip-map-caption span { color: var(--d2-muted, #697386); font-size: 11px; }
+.ip-location-side { min-width: 0; }
+.ip-location-note { margin: 16px; color: var(--d2-muted, #697386); font-size: 12px; line-height: 1.55; }
+.ip-location-evidence { margin: 0 16px 16px !important; display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; }
+.ip-location-side .ip-table-scroll th, .ip-location-side .ip-table-scroll td { padding: 12px 10px; }
+.ip-location-side .ip-table-scroll td:first-child button { color: var(--d2-text, #292d38); }
+.ip-location-side .ip-table-scroll tbody tr:first-child { background: var(--d2-purple-soft, #f1effd); }
+.ip-location-side .ip-table-scroll td:nth-child(2) { font-weight: 650; }
+.ip-location-side .ip-table-scroll { max-height: 470px; }
+.ip-location-side .ip-table-scroll table { white-space: normal; }
+.ip-location-side .ip-table-scroll th { white-space: nowrap; }
+.ip-map-controls button { background: var(--d2-surface, #fff); box-shadow: 0 3px 13px #0001; }
+.ip-map-controls button:disabled { opacity: .45; }
 .ip-map-controls {
   position: absolute;
-  bottom: 12px;
-  left: 12px;
+  bottom: 14px;
+  right: 14px;
+  left: auto;
   display: flex;
   gap: 5px;
 }
@@ -736,6 +777,8 @@
   .ip-location {
     grid-template-columns: 1fr;
   }
+  .ip-map { border-right: 0; border-bottom: 1px solid var(--d2-line, #e5e7ef); }
+  .ip-location-side .ip-table-scroll { max-height: 250px; }
   .ip-actions {
     margin-left: 0;
   }
@@ -766,11 +809,12 @@
     border-radius: 16px;
   }
   .ip-map {
-    min-height: 280px;
+    min-height: 300px;
   }
-  .ip-map svg {
-    height: 280px;
+  .ip-map > svg {
+    height: 300px;
   }
+  .ip-location { margin: -14px; }
   .ip-drawer-body {
     padding: 16px;
   }
