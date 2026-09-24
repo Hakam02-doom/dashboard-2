@@ -1,7 +1,7 @@
 import React,{useState,useEffect,useRef} from 'react';
 import {aiCloud,aiFetch,syncBusinessProfiles,loadCloudBusinesses} from './ai-cloud';
 import {BUSINESS_KEY,businessStorageKey,validBusiness} from './ai-business';
-import {AUTH_RETRY_KEY,authFailure,retrySeconds} from './ai-auth-feedback';
+import {AUTH_RETRY_KEY,authFailure,emailLinkFailure,retrySeconds,withAuthTimeout} from './ai-auth-feedback';
 import './ai-auth.css';
 export function AiCloudAccount({entry=false,onConnected}){
  const [user,setUser]=useState(null),[checking,setChecking]=useState(true),[email,setEmail]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');
@@ -10,11 +10,11 @@ export function AiCloudAccount({entry=false,onConnected}){
  const seconds=retrySeconds(retryAt,now);
  useEffect(()=>{if(!seconds)return;const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer);},[retryAt,seconds>0]);
  useEffect(()=>{const update=e=>{if(e.key===AUTH_RETRY_KEY){setRetryAt(Number(e.newValue||0));setNow(Date.now());}};window.addEventListener('storage',update);return()=>window.removeEventListener('storage',update);},[]);
- useEffect(()=>{if(!aiCloud){setChecking(false);return;}let live=true;aiCloud.auth.getSession().then(({data,error})=>{if(live){setUser(data.session?.user||null);setChecking(false);if(error)setError(authFailure(error));}}).catch(()=>{if(live){setChecking(false);setError('Could not restore your session. Please sign in again.');}});const {data}=aiCloud.auth.onAuthStateChange((_event,session)=>{if(live){setUser(session?.user||null);setChecking(false);}});return()=>{live=false;data.subscription.unsubscribe();};},[]);
+ useEffect(()=>{if(!aiCloud){setChecking(false);return;}let live=true,authChanged=false;withAuthTimeout(aiCloud.auth.getSession()).then(({data,error})=>{if(live){if(!authChanged)setUser(data.session?.user||null);setChecking(false);if(error&&!authChanged)setError(authFailure(error));}}).catch(e=>{if(live&&!authChanged){setChecking(false);setError(authFailure(e));}});const {data}=aiCloud.auth.onAuthStateChange((event,session)=>{if(live){if(event!=='INITIAL_SESSION')authChanged=true;setUser(session?.user||null);setChecking(false);if(session?.user)setError('');}});return()=>{live=false;data.subscription.unsubscribe();};},[]);
  function cooldown(){const until=Date.now()+60000;setRetryAt(until);setNow(Date.now());try{localStorage.setItem(AUTH_RETRY_KEY,String(until));}catch{}}
- async function signIn(e){e.preventDefault();if(busy||seconds)return;setBusy(true);setError('');setMessage('');try{try{localStorage.setItem('d2-ai-return','1');}catch{}const {error}=await aiCloud.auth.signInWithOtp({email:email.trim(),options:{emailRedirectTo:location.origin+'/'}});if(error)throw error;cooldown();setMessage('Sign-in link sent. Open the latest email to continue to AI Visibility.');}catch(e){if(e.status===429||/rate.?limit/i.test(e.message||''))cooldown();setError(authFailure(e));}finally{setBusy(false);}}
+ async function signIn(e){e.preventDefault();if(busy||seconds)return;setBusy(true);setError('');setMessage('');try{const {error}=await withAuthTimeout(aiCloud.auth.signInWithOtp({email:email.trim(),options:{emailRedirectTo:location.origin+'/'}}));if(error)throw error;try{localStorage.setItem('d2-ai-return','1');}catch{}cooldown();setMessage('Sign-in link sent. Open the latest email to continue to AI Visibility.');}catch(e){if(e.status===429||e.status>=500||e.name==='TimeoutError'||/rate.?limit/i.test(e.message||'')){cooldown();try{localStorage.setItem('d2-ai-return','1');}catch{}}setError(emailLinkFailure(e));}finally{setBusy(false);}}
  async function connect(){if(connecting.current)return;connecting.current=true;setBusy(true);setError('');setMessage('');try{
-  const response=await aiFetch('/api/ai/connections',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'claim'}),signal:AbortSignal.timeout(20000)});const result=await response.json();if(!response.ok)throw Error(result.error);
+  const response=await aiFetch('/api/ai/connections',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'claim'}),signal:AbortSignal.timeout(30000)});const result=await response.json().catch(()=>({}));if(!response.ok){const failure=Error(result.error||'Monitoring connection is temporarily unavailable. Please retry.');failure.status=response.status;throw failure;}
   const key=businessStorageKey(user.id);
   let local;try{local=JSON.parse(localStorage.getItem(key)||'null');}catch{local=null;}
   if(!local&&result.legacyOwner){try{local=JSON.parse(localStorage.getItem(BUSINESS_KEY)||'null');}catch{local=null;}}
