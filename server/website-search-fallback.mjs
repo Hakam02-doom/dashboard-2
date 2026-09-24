@@ -12,7 +12,8 @@ export async function searchWebsiteProfile(input,{client,key,request=fetch,now=n
  if(account.subscription||account.account?.monthly_allowance!==0||!(account.account?.remaining_credits>0))throw Error('Search snippet fallback needs free trial credits.');
  const budget=cloudBudgetStore(client),usage=await budget.usage();
  if(usage.search>=100||!(await budget.reserve('search',100)))throw Error('Shared search trial limit reached.');
- const query=`${domain.split('.')[0].replace(/[-_]/g,' ')} ${domain} official website`;
+ const region={in:'India',uk:'United Kingdom',au:'Australia',ca:'Canada',de:'Germany',fr:'France',jp:'Japan',sg:'Singapore',nz:'New Zealand'}[domain.split('.').at(-1)]||'';
+ const query=`${domain.split('.')[0].replace(/[-_]/g,' ')} ${region} official website`.replace(/\s+/g,' ').trim();
  const response=await request('https://www.searchapi.io/api/v1/search?'+new URLSearchParams({engine:'google',q:query}),{headers,signal:AbortSignal.timeout(20000),redirect:'error'});
  if(!response.ok)throw Error('Search snippet fallback did not return usable results.');
  const data=await response.json();
