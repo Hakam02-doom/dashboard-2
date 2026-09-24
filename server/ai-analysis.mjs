@@ -1,3 +1,4 @@
+import {answerPosition} from './answer-position.mjs';
 import {evidenceText,namedEvidence} from './evidence-normalization.mjs';
 const string={type:'string'};
 const object=properties=>({type:'object',properties,required:Object.keys(properties),additionalProperties:false});
@@ -26,9 +27,9 @@ export function applyAssessment(row,assessment,names,own,aliases={}){
   const recommended=mentioned&&b.recommended===true&&quotePresent(b.recommendationEvidence)&&identifies(b.recommendationEvidence)?true:b.recommended===false?false:null;
   if(mentioned)mentions.push(name);
   const sentiment=mentioned&&quotePresent(b.sentimentEvidence)?b.sentiment:'Not assessed';
-  const rankedLine=typeof b.positionEvidence==='string'&&b.positionEvidence.split('\n').some(line=>{const clean=line.replace(/[*_#]/g,'').trim();const match=clean.match(/^(\d+)[.)]\s+(.+)/);return match&&Number(match[1])===b.position&&match[2].toLowerCase().includes(name.toLowerCase());});
-  const position=mentioned&&Number.isInteger(b.position)&&b.position>0&&b.position<=100&&quotePresent(b.positionEvidence)&&rankedLine?b.position:null;
-  metrics[name]={position,sentiment,recommended,recommendationEvidence:recommended?b.recommendationEvidence:'',mentionEvidence:mentioned?(quotePresent(b.mentionEvidence)?b.mentionEvidence:name):'',sentimentEvidence:sentiment!=='Not assessed'?b.sentimentEvidence:'',positionEvidence:position?b.positionEvidence:''};
+  const rank=mentioned?answerPosition(row.answer,identifiers):null;
+  const position=rank?.position??null;
+  metrics[name]={position,sentiment,recommended,recommendationEvidence:recommended?b.recommendationEvidence:'',mentionEvidence:mentioned?(quotePresent(b.mentionEvidence)?b.mentionEvidence:name):'',sentimentEvidence:sentiment!=='Not assessed'?b.sentimentEvidence:'',positionEvidence:rank?.evidence||''};
  }
  return {...row,mentioned:mentions.includes(own),recommended:metrics[own]?.recommended??null,position:metrics[own]?.position??null,sentiment:metrics[own]?.sentiment||'Not assessed',competitors:mentions.filter(n=>n!==own),trackedCompetitors:names.filter(n=>n!==own),competitorMetrics:metrics,brandAssessment:metrics,assessmentMethod:'OpenAI classification with verbatim evidence checks',analysisModel:'gpt-4.1-mini-2025-04-14',comparisonAssessed:names.length>1,measurementVersion:2};
 }

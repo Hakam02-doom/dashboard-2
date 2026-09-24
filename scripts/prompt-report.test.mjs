@@ -15,3 +15,13 @@ test('previously collected questions appear without duplicating saved or paused 
  assert.equal(list.find(x=>x.text==='Different question').tracking,true);assert.equal(list.find(x=>x.text==='Unseen').tracking,false);
  assert.equal(groupPromptMetrics([p],rows,{name:'Brand'},30).visibility,50);
 });
+
+test('own visibility includes assessed mentions across changed competitor sets, excludes pending analysis',async()=>{
+ const {ownPromptMetrics,keywordImportTemplate}=await import('../src/prompt-report.js');
+ const input=[{...rows[0],trackedCompetitors:['Old']},{...rows[1],trackedCompetitors:['New']},{...rows[1],id:'pending',comparisonAssessed:false}];
+ const m=ownPromptMetrics(input,'Brand');assert.equal(m.visibility,50);assert.equal(m.sampleSize,2);assert.equal(m.mentions,1);
+ assert.equal(ownPromptMetrics([input[2]],'Brand').visibility,null);
+ assert.equal(ownPromptMetrics([rows[1]],'Brand').visibility,0);
+ assert.match(keywordImportTemplate([p]),/"Prompt","Source","Volume","Difficulty","Date","Location"/);
+ assert.match(keywordImportTemplate([p]),/"Best tools\?","","","","",""/);
+});

@@ -7,7 +7,7 @@ export const aiCloud = url && key ? createClient(url,key,{auth:{persistSession:t
 async function currentUser() {
  if(!aiCloud)throw new Error('Cloud connection is not configured.');
  const {data,error}=await aiCloud.auth.getUser();
- if(error||!data.user)throw new Error('Sign in through Settings to use cloud storage.');
+ if(error||!data.user)throw new Error('Sign in to AI Visibility to use cloud storage.');
  return data.user;
 }
 export async function saveCloudBusiness(profile) {

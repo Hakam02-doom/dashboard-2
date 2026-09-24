@@ -1,3 +1,4 @@
+import {uniqueObservations} from './measurement-quality.js';
 import {normalizePrompt} from './ai-prompt-data.js';
 import {reportMetrics} from './ai-insights-data.js';
 export function promptAnswers(prompt,answers,days=30,now=new Date()){
@@ -6,7 +7,7 @@ export function promptAnswers(prompt,answers,days=30,now=new Date()){
 }
 export function promptMetrics(prompt,answers,business,days=30){
  const history=promptAnswers(prompt,answers,days);
- const own=reportMetrics(history,business.name).find(b=>b.own);
+ const own=ownPromptMetrics(history,business.name);
  return {...own,history,latest:history[0],brands:[...new Set(history.flatMap(a=>[...(a.mentioned?[business.name]:[]),...(a.competitors||[])]))]};
 }
 export function citationDomains(answers){
@@ -31,5 +32,16 @@ export function groupPromptMetrics(prompts,answers,business,days){
  const chosen=new Set(prompts.map(p=>normalizePrompt(p.text)));
  const filtered=answers.filter(a=>chosen.has(normalizePrompt(a.prompt)));
  const recent=filtered.filter(a=>days===0||new Date(a.at)>=new Date(Date.now()-days*86400000)&&new Date(a.at)<=new Date());
- return reportMetrics(recent,business.name).find(b=>b.own);
+ return ownPromptMetrics(recent,business.name);
+}
+
+// Own-brand visibility does not require every historical competitor to be tracked.
+export function ownPromptMetrics(input,name){
+ const rows=uniqueObservations(input).filter(r=>typeof r.mentioned==='boolean'&&(r.brandAssessment||r.comparisonAssessed===true));
+ const mentions=rows.filter(r=>r.mentioned),ranked=mentions.filter(r=>Number.isFinite(r.position)&&r.position>0),sentiment=mentions.filter(r=>['Positive','Neutral','Negative'].includes(r.sentiment));
+ return {name,own:true,sampleSize:rows.length,mentions:mentions.length,visibility:rows.length?mentions.length/rows.length*100:null,position:ranked.length?ranked.reduce((n,r)=>n+r.position,0)/ranked.length:null,sentiment:sentiment.length?sentiment.reduce((n,r)=>n+({Positive:100,Neutral:50,Negative:0}[r.sentiment]),0)/sentiment.length:null};
+}
+export function keywordImportTemplate(rows){
+ const quote=v=>'"'+String(v??'').replace(/^[=+@\-\t\r]/,"'$&").replaceAll('"','""')+'"';
+ return [['Prompt','Source','Volume','Difficulty','Date','Location'],...rows.map(p=>[p.text,'','','','',''])].map(r=>r.map(quote).join(',')).join('\r\n');
 }

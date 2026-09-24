@@ -1,0 +1,13 @@
+.aiv-auth-dialog{box-sizing:border-box;width:min(460px,calc(100vw - 32px));max-height:calc(100dvh - 48px);overflow:auto;margin:auto;padding:32px;border:1px solid var(--d2-line);border-radius:24px;background:var(--d2-surface);color:var(--d2-text);box-shadow:0 24px 64px #0003}
+.aiv-auth-dialog::backdrop{background:#10121f80;backdrop-filter:blur(5px)}
+.aiv-auth-close{position:absolute;right:16px;top:16px;display:grid;place-items:center;width:36px;height:36px;border:0;border-radius:50%;background:var(--d2-surface-muted);color:var(--d2-muted);cursor:pointer}
+.aiv-auth-icon{display:grid;place-items:center;width:52px;height:52px;margin-bottom:24px;background:var(--d2-purple-soft);color:var(--d2-purple-ink);border-radius:16px}
+.aiv-auth-form h3{font-size:24px;font-weight:600;line-height:1.25;margin:0 0 12px;letter-spacing:-.025em}
+.aiv-auth-form>p,.aiv-cloud-account>p{font-size:14px;line-height:1.6;overflow-wrap:anywhere;color:var(--d2-muted);margin:0 0 24px}
+.aiv-auth-form form,.aiv-cloud-account form{display:grid;gap:16px;max-width:100%}
+.aiv-auth-form label,.aiv-cloud-account label{display:grid;gap:8px;font-size:14px;font-weight:500}
+.aiv-auth-form input,.aiv-cloud-account input{box-sizing:border-box;width:100%;min-width:0;padding:12px 14px;border:1px solid var(--d2-line);border-radius:12px;background:var(--d2-surface-muted);color:var(--d2-text);font:inherit}
+.aiv-auth-form .cs-button{justify-content:center;min-height:44px;font:inherit;font-size:14px}.aiv-auth-form small{font-size:12px;line-height:1.5;color:var(--d2-muted)}
+.aiv-auth-form .aiv-auth-error,.aiv-cloud-account .aiv-auth-error,.aiv-auth-form .aiv-auth-message,.aiv-cloud-account .aiv-auth-message{margin:20px 0 0;padding:12px 14px;border:1px solid var(--d2-line);border-radius:12px;background:var(--d2-surface-muted);color:var(--d2-text);font-size:14px;line-height:1.6}
+.aiv-auth-dialog button:focus-visible,.aiv-auth-dialog input:focus-visible{outline:2px solid var(--d2-purple-ink);outline-offset:3px}
+@media(max-width:480px){.aiv-auth-dialog{padding:24px}.aiv-auth-form h3{font-size:22px}}

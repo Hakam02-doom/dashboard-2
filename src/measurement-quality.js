@@ -33,7 +33,7 @@ export function measurementQuality(input,business){
  if(engines.length>1){const sets=engines.map(e=>new Set(rows.filter(r=>r.engine===e.name).map(promptKey)));if(sets.some(set=>set.size!==sets[0].size||[...set].some(p=>!sets[0].has(p))))warnings.push('Engines have different question coverage. Select one engine before comparing scores across time.');}
  if(engines.length<2)warnings.push('Only one AI engine is represented.');
  if(rows.some(r=>r.type==='Branded')&&rows.some(r=>r.type==='Unbranded'))warnings.push('Branded and unbranded questions are mixed. Filter them separately for discovery comparisons.');
- if(paired.length<rows.length)warnings.push('Some answers do not cover the full competitor set; comparison metrics use only shared coverage.');
+ if(paired.length<rows.length)warnings.push('Tracked competitor lists changed across answers. Each brand’s visibility uses only answers where it was tracked; compare trends after the list stays stable.');
  if(rows.some(r=>!r.measurementProfile?.reviewed))warnings.push('Some observations predate identity review.');
  return {total:rows.length,duplicates:input.length-rows.length,days,prompts,engines,warnings,paired:paired.length,
   mentionInterval:wilsonInterval(rows.filter(r=>r.mentioned).length,rows.length),

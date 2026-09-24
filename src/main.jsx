@@ -335,7 +335,7 @@ function App() {
   const { preference, dark, setPreference } = useAppearance();
   const [sidebarExpanded, setSidebarExpanded] = useState(readSidebarPreference),
     [mobileMenu, setMobileMenu] = useState(false),
-    [view, setView] = useState("Dashboard"),
+    [view, setView] = useState(() => { try { return localStorage.getItem("d2-ai-return") ? "AI visibility" : "Dashboard"; } catch { return "Dashboard"; } }),
     [period, setPeriod] = useState("Month"),
     [offset, setOffset] = useState(0),
     [selected, setSelected] = useState(null),
@@ -904,6 +904,7 @@ function App() {
           />
         ) : view === "AI visibility" ? (
           <AiVisibilityEntry
+            onExit={() => navigate("Dashboard")}
             overview={<VisibilityPage onKeywords={() => navigate("Keyword research")} />}
             onSettings={() => navigate("Settings")}
             onToast={setToast}

@@ -1,3 +1,4 @@
+import {AiSignInGate} from './AiSignInGate';
 import {aiFetch} from './ai-cloud';
 import {aiCloud,loadCloudBusinesses,syncBusinessProfiles} from './ai-cloud';
 import React, { useState,useEffect } from 'react';
@@ -6,16 +7,20 @@ import { AiWorkspace } from './AiWorkspace';
 import { BUSINESS_KEY, publicWebsite, validBusiness } from './ai-business';
 import './ai-insights.css';
 
+function originalProfile({onboarding,market,...profile}) { return profile; }
 function readBusinesses() {
   try {
     const raw = localStorage.getItem(BUSINESS_KEY);
     if (!raw) return { active: '', profiles: {}, error: '' };
     const data = JSON.parse(raw);
     if (!data || typeof data.active !== 'string' || !data.profiles || typeof data.profiles !== 'object' || !Object.values(data.profiles).every(validBusiness)) throw Error();
-    return { ...data, error: '' };
+    return { ...data, profiles:Object.fromEntries(Object.entries(data.profiles).map(([key,value])=>[key,originalProfile(value)])), error: '' };
   } catch { return { active: '', profiles: {}, error: 'Saved business details could not be read. They have not been overwritten. Check browser storage access before saving.' }; }
 }
 export function AiVisibilityEntry(props) {
+ return <AiSignInGate onExit={props.onExit}><AiVisibilityContent {...props}/></AiSignInGate>;
+}
+function AiVisibilityContent(props) {
   const [initial] = useState(readBusinesses);
   const [businesses, setBusinesses] = useState(initial);
   const active = businesses.profiles[businesses.active];
@@ -24,7 +29,7 @@ export function AiVisibilityEntry(props) {
   const [draft, setDraft] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(initial.error);
-  useEffect(()=>{let mounted=true;loadCloudBusinesses().then(rows=>{if(!mounted||!rows.length)return;setBusinesses(prev=>{const profiles={...prev.profiles};for(const row of rows)profiles[row.domain]=row.profile;const next={...prev,profiles,active:prev.active||rows[0].domain};try{localStorage.setItem(BUSINESS_KEY,JSON.stringify(next));}catch{}return next;});if(!initial.active)setEditing(false);}).catch(()=>{});return()=>{mounted=false;};},[]);
+  useEffect(()=>{let mounted=true;loadCloudBusinesses().then(rows=>{if(!mounted||!rows.length)return;setBusinesses(prev=>{const profiles={...prev.profiles};for(const row of rows)profiles[row.domain]=originalProfile(row.profile);const next={...prev,profiles,active:prev.active||rows[0].domain};try{localStorage.setItem(BUSINESS_KEY,JSON.stringify(next));}catch{}return next;});if(!initial.active)setEditing(false);}).catch(()=>{});return()=>{mounted=false;};},[]);
 
   async function analyze(event) {
     event.preventDefault(); setError(''); setDraft(null);
@@ -42,16 +47,30 @@ export function AiVisibilityEntry(props) {
     try { const target = publicWebsite(url); setDraft({ name: '', description: '', domain: target.hostname.replace(/^www\./, ''), url: target.href, headings: [], schemaTypes: [], source: 'manual', analyzedAt: null }); setError(''); }
     catch { setError('Enter the business website before adding details manually.'); }
   }
+  function openSaved(domain) {
+    const profile=businesses.profiles[domain];
+    if (!profile) return;
+    const next={...businesses,active:domain};
+    try {localStorage.setItem(BUSINESS_KEY,JSON.stringify(next));}
+    catch {setError('Could not save the selected website in this browser. Check browser storage access.');return;}
+    setBusinesses(next);setUrl(profile.url);setDraft(null);setError('');setEditing(false);
+  }
   async function save(event) {
     event.preventDefault();
     if (initial.error) { setError(initial.error); return; }
     const profile = { ...draft, name: draft.name.trim(), description: draft.description.trim() };
     if (!validBusiness(profile)) { setError('Add a business name and check the website.'); return; }
     const next = { active: profile.domain, profiles: { ...businesses.profiles, [profile.domain]: profile } };
+    const returningToSavedBusiness = Boolean(businesses.profiles[profile.domain]);
     setBusy(true);
     try {
       localStorage.setItem(BUSINESS_KEY, JSON.stringify(next));
       await syncBusinessProfiles(next.profiles);
+      if (returningToSavedBusiness) {
+        setBusinesses(next);setEditing(false);setDraft(null);setError('');
+        props.onToast('Saved AI Insights restored for this website.');
+        return;
+      }
       const response=await aiFetch('/api/ai/searchapi',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'baseline',business:profile})});
       const data=await response.json();
       setBusinesses(next);setEditing(false);setDraft(null);setError('');
@@ -63,6 +82,7 @@ export function AiVisibilityEntry(props) {
   if (editing) return <section className="cs-page ai-onboarding">
     <div className="cs-page-intro"><div><h2>Every insight starts with your business.</h2><p>Add your website so your questions, sources, and insights share the right context.</p></div>{active && <button className="cs-button" onClick={() => { setEditing(false); setDraft(null); setError(''); }} disabled={busy}><ArrowLeft size={16}/>Back to insights</button>}</div>
     <div className="aiv-intake-layout"><div className="panel aiv-intake">
+      {Object.keys(businesses.profiles).length>0&&<section className="aiv-saved-sites" aria-label="Saved websites"><h3>Your saved websites</h3><p>Open an existing report without running another scan.</p><div>{Object.values(businesses.profiles).map(profile=><button type="button" key={profile.domain} className="cs-button" aria-current={profile.domain===businesses.active?'true':undefined} onClick={()=>openSaved(profile.domain)} disabled={busy}><strong>{profile.name}</strong><span>{profile.domain}</span><ArrowRight size={15}/></button>)}</div></section>}
       <span className="aiv-symbol"><Globe2 size={27}/></span><h3>Which website would you like to understand?</h3><p>We’ll read the public page and suggest a business profile for you to review.</p>
       <form onSubmit={analyze}><label htmlFor="business-website">Business website</label><div className="aiv-url-field"><Globe2 size={19}/><input id="business-website" autoComplete="url" inputMode="url" required maxLength={2048} placeholder="yourbusiness.com" value={url} onChange={e => { setUrl(e.target.value); setDraft(null); }} disabled={busy}/></div><p className="aiv-hint">Use your business website, not a private dashboard or social login. Query strings are omitted.</p><button className="cs-button filled" disabled={busy || !url.trim()}>{busy ? <><RefreshCw size={16} className="aiv-spin"/>Reading your website…</> : <>Analyze website<ArrowRight size={16}/></>}</button><button type="button" className="ai-text-button" onClick={manual} disabled={busy}>Enter details manually</button></form>
       {busy && <p role="status">Reading the page title, description, headings, and structured business information.</p>}

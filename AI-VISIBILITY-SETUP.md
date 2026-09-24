@@ -83,3 +83,42 @@ measurement. API-derived results have distinct engine names, model metadata and 
 They do not represent exact consumer Claude/Gemini app outputs. Research insights below the table
 uses saved answers at no additional API cost: observed competitor gaps, matched-question/date/market
 engine comparisons and cited-source research leads. It does not infer causality or guarantee rankings.
+
+## Recommendation-to-improvement workflow
+
+AI Insights now shows the explicit recommendation count for unbranded, assessed buyer questions.
+Prompt detail shows the same count for its selected engine. Improve → AI Opportunities, Content
+Scorecard and Content Gaps read the selected business's saved answers rather than the Uplift sample.
+Each question exposes the assessed competitor recommendation excerpt, original answer, citations,
+measured recommendation rate and sampled site coverage. Users can save a per-business action and
+target page, download an evidence-based Markdown brief, or open a Dashboard 2 content draft.
+Mark Published records a baseline timestamp. New observations of the **same prompt and engine**
+are compared with those before publication; the UI never claims the content caused a change.
+Actions and baselines share the private owner-scoped collector store. Unassessed answers cannot
+create an opportunity.
+
+## Perplexity Sonar connector
+
+The direct collector also supports the official Perplexity Sonar API with server-only
+`PERPLEXITY_API_KEY` and optional `PERPLEXITY_MODEL` (default `sonar`). It uses a bounded output,
+requires a completed answer with source citations, stores the model and original citations, and
+never uses SearchAPI's retired Perplexity endpoint. It appears in manual prompt collection and
+the scheduler only when `AI_DIRECT_COLLECTION_ENABLED=true` and the shared lifetime request
+allowance is positive. The key is not configured in this installation, so no Perplexity call is
+made. Perplexity billing is separate from the authorized OpenAI analysis budget. Reference:
+https://docs.perplexity.ai/docs/sonar/quickstart .
+
+## Google traffic and search connector
+
+The Traffic view no longer presents fabricated visits. A read-only server adapter accepts
+`GOOGLE_SERVICE_ACCOUNT_JSON`, a numeric GA4 property ID and a matching Search Console property
+per selected business. It calls GA4 Data API for known AI referrer sessions/landing pages and
+Search Console for top organic queries/pages. It labels these as distinct measurements: Google
+AI Overview clicks cannot be reliably separated from ordinary Google visits, and no referral
+identifies the exact prompt. Property IDs are owner-scoped in the private collector store; the
+service-account key stays in server environment settings. Reports are fetched on demand and not
+saved in the browser or Git. This Google account currently shows the initial GA4 account-creation
+screen and Search Console welcome screen, with no configured account/property to read. Set up
+and verify the properties, grant the service-account email read access, then load the report.
+References: https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/properties/runReport
+and https://developers.google.com/webmaster-tools/v1/searchanalytics/query .

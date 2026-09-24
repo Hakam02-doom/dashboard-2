@@ -1,4 +1,4 @@
-import {uniqueObservations,sharedCoverage} from './measurement-quality.js';
+import {uniqueObservations} from './measurement-quality.js';
 export const insightTabs = ['Visibility', 'Mentions & citations', 'Sentiment', 'Sources', 'Topics', 'Query fanout', 'Location'];
 export function summarizeAnswers(rows) {
   const total = rows.length;
@@ -24,18 +24,22 @@ export function sampleAnswers(business, now = new Date()) {
 export function brandRankings(rows, businessName) {
  if(rows.every(r=>r.at))rows=uniqueObservations(rows);
  const names = [businessName, ...new Set(rows.flatMap(r => r.trackedCompetitors || r.competitors || []))];
- const comparableRows=names.length>1?sharedCoverage(rows,names.slice(1)):rows;
- const results = names.map((name, index) => ({ name, own: index === 0, mentions: comparableRows.filter(r => index === 0 ? r.mentioned : (r.competitors || []).includes(name)).length }));
- const comparable = comparableRows.length && comparableRows.every(r=>r.comparisonAssessed!==false);
+ // A saved answer only measures the competitors tracked when it was collected.
+ // Requiring every historical answer to cover the union of all later lists can
+ // erase the entire report when a business changes its comparison set.
+ const results = names.map((name, index) => {
+  const measured = index === 0 ? rows : rows.filter(r => (r.trackedCompetitors || r.competitors || []).includes(name));
+  return { name, own: index === 0, sampleSize: measured.length, mentions: measured.filter(r => index === 0 ? r.mentioned : (r.competitors || []).includes(name)).length };
+ });
+ const comparable = rows.length && rows.every(r=>r.comparisonAssessed!==false);
  const totalMentions = results.reduce((sum, r) => sum + r.mentions, 0);
- return results.map(r => ({ ...r, sampleSize:comparableRows.length,visibility: comparableRows.length ? r.mentions / comparableRows.length * 100 : null, sov: comparable && totalMentions ? r.mentions / totalMentions * 100 : null })).sort((a,b) => b.mentions - a.mentions);
+ return results.map(r => ({ ...r, visibility: r.sampleSize ? r.mentions / r.sampleSize * 100 : null, sov: comparable && totalMentions ? r.mentions / totalMentions * 100 : null })).sort((a,b) => b.mentions - a.mentions);
 }
 
 export function reportMetrics(rows, businessName) {
   if(rows.every(r=>r.at))rows=uniqueObservations(rows);
   return brandRankings(rows, businessName).map(brand => {
-    const paired=sharedCoverage(rows,[...new Set(rows.flatMap(r=>r.trackedCompetitors||r.competitors||[]))]);
-    const answers = (paired.length?paired:brand.own&&brand.sampleSize?rows:[]).filter(r => brand.own ? r.mentioned : r.competitors?.includes(brand.name));
+    const answers = rows.filter(r => brand.own ? r.mentioned : (r.trackedCompetitors || r.competitors || []).includes(brand.name) && r.competitors?.includes(brand.name));
     const values = answers.map(r => brand.own ? { position:r.position, sentiment:r.sentiment } : r.competitorMetrics?.[brand.name]).filter(Boolean);
     const ranked = values.filter(v => Number.isFinite(v.position) && v.position > 0);
     const assessed = values.filter(v => ['Positive','Neutral','Negative'].includes(v.sentiment));

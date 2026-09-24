@@ -23,3 +23,14 @@ test('rejects ambiguous configuration and allows clearing the comparison list',(
  assert.deepEqual(validateCompetitors([],business.name),[]);
  for(const names of [['SEM RUSH','sem-rush'],['Uplift AI'],['!!!'],Array(13).fill('a')])assert.throws(()=>validateCompetitors(names,business.name));
 });
+test('switching competitor lists retains measured results for the business and each tracked brand',()=>{
+ const old=compareAnswer({id:'old',prompt:'Which platform?',engine:'ChatGPT Search',answer:'Uplift AI and Semrush',at:'2026-09-22T12:00:00Z'},business,['Semrush']);
+ const recent=compareAnswer({id:'new',prompt:'Which platform?',engine:'ChatGPT Search',answer:'Uplift AI and Ahrefs',at:'2026-09-23T12:00:00Z'},business,['Ahrefs']);
+ const brands=brandRankings([old,recent],business.name);
+ assert.equal(brands.find(b=>b.own).visibility,100);
+ assert.equal(brands.find(b=>b.name==='Semrush').visibility,100);
+ assert.equal(brands.find(b=>b.name==='Ahrefs').visibility,100);
+ assert.equal(brands.find(b=>b.own).sampleSize,2);
+ assert.equal(brands.find(b=>b.name==='Semrush').sampleSize,1);
+ assert.equal(brands.find(b=>b.own).sov,50);
+});
