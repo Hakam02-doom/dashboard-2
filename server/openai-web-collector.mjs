@@ -1,3 +1,4 @@
+import {requestWithReservation} from './provider-request.mjs';
 import {randomUUID} from 'node:crypto';
 
 const MODEL = 'gpt-4.1-mini';
@@ -20,10 +21,9 @@ export function normalizeOpenAIWebResponse(data, business, prompt, topic='Buyer 
 
 export async function collectOpenAIWeb({key,business,prompt,topic,request=fetch,reserve}) {
  if(!key)throw Error('OpenAI web search is not configured.');
- await reserve();
  let response;
- try {response=await request('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,store:false,tools:[{type:'web_search',search_context_size:'low'}],tool_choice:'required',input:prompt,max_output_tokens:1300}),signal:AbortSignal.timeout(180000),redirect:'error'});}
- catch {throw Error('OpenAI web search timed out. The attempt was saved and will not be retried automatically.');}
+ try {response=await requestWithReservation(request,'https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,store:false,tools:[{type:'web_search',search_context_size:'low'}],tool_choice:'required',max_tool_calls:2,input:prompt,max_output_tokens:1300}),signal:AbortSignal.timeout(180000),redirect:'error'},reserve);}
+ catch (e) {if(/^(OpenAI pilot budget|Saved scans)/.test(e.message||''))throw e;throw Error('OpenAI web search timed out. The attempt was saved and will not be retried automatically.');}
  const data=await response.json();
  if(!response.ok)throw Error(data.error?.code==='insufficient_quota'?'OpenAI has no available API credit.':'OpenAI web search returned '+response.status+'. No automatic retry was made.');
  return normalizeOpenAIWebResponse(data,business,prompt,topic);

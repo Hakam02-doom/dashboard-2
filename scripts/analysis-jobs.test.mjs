@@ -79,3 +79,10 @@ test('a completed journal can recover a step even after the shared budget is exh
  state={attempts:1,answers:[]};exhausted=true;
  assert.equal((await call()).body.report.discovery.id,'discovery');assert.equal(network,calls);assert.equal(reservations,1);
 });
+test('OpenAI web collection replays without a second reservation after a worker interruption',async()=>{
+ const {collectOpenAIWeb}=await import('../server/openai-web-collector.mjs');
+ let charges=0,network=0;const request=journaledRequest(journalClient(),'web-job',async()=>{network++;return new Response(JSON.stringify({id:'saved',status:'completed',output:[{type:'web_search_call',action:{type:'search'}},{type:'message',content:[{type:'output_text',text:'A grounded answer.',annotations:[]}]}]}));});
+ const options={key:'fake',business:{domain:'example.com'},prompt:'Which options are best?',request,reserve:async()=>{charges++;}};
+ await collectOpenAIWeb(options);await collectOpenAIWeb({...options,reserve:async()=>{throw Error('Budget exhausted');}});
+ assert.equal(network,1);assert.equal(charges,1);
+});

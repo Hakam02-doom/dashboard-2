@@ -17,3 +17,21 @@ The `scripts/analysis-queue-load.mjs` integration test creates and removes tempo
 ## Operations
 
 Queue state is in `ai_analysis_jobs`: status, stage, progress, available_at, lease_until, error. The private scheduler `dashboard2-analysis-queue` wakes every minute. Do not manually clear a live lease. Expired leases are recovered by the next claim. Never replay an ambiguous paid request by deleting its journal row. Keep the provider budget ledger intact. Before raising limits or adding providers, obtain the corresponding spending authorization and run a provider-quota-aware load test; the current tests validate orchestration, not unlimited provider throughput.
+
+## 100-question analysis (September 24)
+
+New queued website analyses target 100 unbranded buyer prompts: 25 per intent
+(Discovery, Comparison, Buying decisions, Use cases). Existing 3-question jobs
+retain their original target; the Insights expansion button queues the upgrade.
+Plans are generated and validated one intent at a time. Existing 24/32-question
+plans and already assessed benchmark answers are retained during an upgrade.
+Collection alternates intents and each worker invocation performs only one paid
+provider request (planning, web search, or evidence assessment). A raw answer is
+saved before assessment and only assessed answers enter scores. The provider
+journal also wraps OpenAI web collection, including budget-neutral replay.
+
+The authorized shared reservation ceiling is $25 (500 requests at $0.05 each),
+not $25 per visitor. A fresh 100-question run normally reserves $10.20: four plan
+requests, 100 searches and 100 assessments. Web responses allow at most two tool
+calls. The ceiling is cumulative; no usage counters were reset. Scores describe
+these sampled answers, not universal visibility or guaranteed accuracy.

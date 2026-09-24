@@ -8,7 +8,7 @@ import {searchapiHandler} from './searchapi-handler.mjs';
 
 const origin='https://dashboard-2-sandy.vercel.app';
 const send=(res,status,body)=>{res.statusCode=status;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(body));};
-export const publicJob=j=>j?({id:j.id,url:j.url,domain:j.domain,status:j.status,stage:j.stage,progress:j.progress,profile:j.profile,error:j.error,updatedAt:j.updated_at}):null;
+export const publicJob=j=>j?({id:j.id,url:j.url,domain:j.domain,status:j.status,stage:j.stage,progress:j.progress,target:j.target||3,profile:j.profile,error:j.error,updatedAt:j.updated_at}):null;
 async function rpc(client,name,args={}){const {data,error}=await client.rpc(name,args);if(error)throw error;return data;}
 export function createJobsApi(env,{client=serverClient(env),local=false}={}){
  return async(req,res)=>{
@@ -79,10 +79,16 @@ export async function runAnalysisStep(job,{client,env,request=fetch,analyze=anal
   return {status:'queued',stage:'Finding competitors',progress:10,profile};
  }
  const handler=searchapiHandler({local:true,key:env.SEARCHAPI_API_KEY,analysisKey:env.OPENAI_API_KEY,analysisBudget:Number(env.AI_ANALYSIS_BUDGET_USD||1),store,budgetStore:cloudBudgetStore(client),request:journal});
- const req=internalRequest({action:'baselineStep',business:job.profile});req.internalWorker=true;
+ const req=internalRequest({action:job.target===100?'benchmarkStep':'baselineStep',business:job.profile});req.internalWorker=true;
  let status,result;await handler(req,{setHeader(){},set statusCode(v){status=v;},end(raw){result=JSON.parse(raw);}});
  if(result?.code==='ANALYSIS_BUSY')return {status:'queued',stage:'Waiting for your previous analysis',progress:job.progress,delay:15};
- if(status!==200||result.report?.status==='partial')throw Error(result.error||result.report?.error||'Analysis could not finish. Saved answers are preserved.');
+ if(status!==200||(job.target===100?result.benchmark:result.report)?.status==='partial')throw Error(result.error||result.benchmark?.error||result.report?.error||'Analysis could not finish. Saved answers are preserved.');
+ if(job.target===100){
+  const measured=result.benchmark?.total===100?result.benchmark.completed.length:0;
+  const planned=result.plan?.questions?.length||0;
+  if(result.benchmark?.total===100&&result.benchmark.status==='complete')return {status:'complete',stage:'100 buyer questions measured · Your insights are ready',progress:100};
+  return {status:'queued',stage:planned<100?`Preparing buyer questions · ${planned} of 100 planned`:`Analyzing buyer questions · ${measured} of 100 measured`,progress:planned<100?10+Math.floor(planned/10):20+Math.floor(measured*.79)};
+ }
  const report=result.report;
  if(report?.status==='complete')return {status:'complete',stage:'Your insights are ready',progress:100};
  const count=report?.completed?.length||0;

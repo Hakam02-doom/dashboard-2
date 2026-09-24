@@ -1,0 +1,42 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {Readable} from 'node:stream';
+import {nextPromptBatch,appendPromptBatch,BUYER_INTENTS} from '../server/hundred-prompts.mjs';
+import {searchapiHandler} from '../server/searchapi-handler.mjs';
+const makeBatch=(intent,count,offset=0)=>({questions:Array.from({length:count},(_,i)=>({text:`Which running shoes fit ${intent} buyer scenario number ${i+offset}?`,intent,topic:'Running shoes'}))});
+test('100-question plan balances four intents and rejects branded and duplicate questions',()=>{
+ let plan={questions:[]};for(const intent of BUYER_INTENTS){const batch=nextPromptBatch(plan.questions);assert.deepEqual(batch,{intent,count:25});plan=appendPromptBatch(plan,makeBatch(intent,25),batch,['Nike']);}
+ assert.equal(plan.questions.length,100);assert.equal(nextPromptBatch(plan.questions),null);assert.equal(new Set(plan.questions.map(q=>q.id)).size,100);
+ assert.throws(()=>appendPromptBatch({questions:[]},makeBatch('Discovery',24),{intent:'Discovery',count:25}),/incomplete/);
+ const branded=makeBatch('Discovery',25);branded.questions[0].text='Which Nike running shoes are best for beginners?';assert.throws(()=>appendPromptBatch(null,branded,{intent:'Discovery',count:25},['Nike']),/branded/);
+ const duplicate=makeBatch('Discovery',25);duplicate.questions[24]=duplicate.questions[0];assert.throws(()=>appendPromptBatch(null,duplicate,{intent:'Discovery',count:25}),/repeated/);
+});
+test('100-question durable run splits calls, survives restarts, and produces 100 assessed answers once',async()=>{
+ let state={answers:[],attempts:0},paid=0,searches=0,assessments=0,plans=0;
+ const store={kind:'test',acquire:async()=>true,release:async()=>{},load:async()=>structuredClone(state),save:async s=>{state=structuredClone(s);}};
+ const request=async(url,options)=>{paid++;const body=JSON.parse(options.body);let data;
+  if(url.endsWith('/responses')){searches++;assert.equal(body.max_tool_calls,2);data={id:`answer-${searches}`,status:'completed',output:[{type:'web_search_call',action:{type:'search'}},{type:'message',content:[{type:'output_text',text:'Acme makes running shoes.',annotations:[{url:'https://acme.com/shoes'}]}]}]};}
+  else {const input=JSON.parse(body.messages[1].content);let result;
+   if(input.brands){assessments++;result={brands:[{name:'Acme',mentioned:true,mentionEvidence:'Acme makes running shoes.',recommended:false,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:'Acme makes running shoes.',position:null,positionEvidence:''}],discoveredBrands:[]};}
+   else{const batch=nextPromptBatch(state.plans?.['acme.com']?.questions);plans++;result=makeBatch(batch.intent,batch.count);}
+   data={choices:[{finish_reason:'stop',message:{content:JSON.stringify(result)}}]};
+  }return {ok:true,json:async()=>data};
+ };
+ const call=async(internal=true)=>{const handler=searchapiHandler({local:true,analysisKey:'fake',analysisBudget:25,store,request});const req=Readable.from([JSON.stringify({action:'benchmarkStep',business:{name:'Acme',domain:'acme.com',description:'Running shoes'}})]);req.method='POST';req.internalWorker=internal;req.headers={origin:'http://127.0.0.1:5174',host:'127.0.0.1:5174','content-type':'application/json'};const res={setHeader(){},end(raw){this.body=JSON.parse(raw);}};await handler(req,res);return res;};
+ assert.equal((await call(false)).statusCode,403);
+ for(let i=0;i<204;i++){const before=paid;const r=await call();assert.equal(r.statusCode,200,JSON.stringify(r.body));assert.equal(paid-before,1);assert.notEqual(r.body.benchmark?.status,'partial');}
+ const done=await call();assert.equal(paid,204);assert.equal(plans,4);assert.equal(searches,100);assert.equal(assessments,100);assert.equal(done.body.answers.length,100);assert.equal(done.body.benchmark.completed.length,100);assert.equal(done.body.benchmark.status,'complete');assert.equal(done.body.analysisBudget.limit,25);
+ assert.deepEqual(state.answers.slice(0,4).map(row=>state.plans['acme.com'].questions.find(q=>q.id===row.promptId).intent),BUYER_INTENTS);
+ await call();assert.equal(paid,204);
+});
+test('legacy plans retain their identifiers when expanded to 100 questions',()=>{
+ let plan={questions:BUYER_INTENTS.flatMap((intent,n)=>makeBatch(intent,6).questions.map((q,i)=>({...q,id:`prompt-${n*6+i+1}`})))};
+ const original=structuredClone(plan.questions);
+ for(const intent of BUYER_INTENTS){const batch=nextPromptBatch(plan.questions);assert.equal(batch.count,19);plan=appendPromptBatch(plan,makeBatch(intent,19,6),batch);}
+ assert.deepEqual(plan.questions.slice(0,24),original);assert.equal(plan.questions.length,100);
+});
+test('the shared $25 ceiling stops new paid requests even if configured higher',async()=>{
+ let network=0;const state={answers:[],analysisAttempts:500,attempts:0};const store={kind:'test',load:async()=>state,save:async()=>{},acquire:async()=>true,release:async()=>{}};
+ const handler=searchapiHandler({local:true,analysisKey:'fake',analysisBudget:500,store,request:async()=>{network++;throw Error('Unexpected spend');}});
+ const req=Readable.from([JSON.stringify({action:'benchmarkStep',business:{name:'Acme',domain:'acme.com'}})]);req.method='POST';req.internalWorker=true;req.headers={origin:'http://127.0.0.1:5174',host:'127.0.0.1:5174','content-type':'application/json'};const res={setHeader(){},end(raw){this.body=JSON.parse(raw);}};await handler(req,res);assert.equal(res.statusCode,429);assert.match(res.body.error,/budget reached/);assert.equal(network,0);
+});
