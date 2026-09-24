@@ -9,8 +9,8 @@ const business={domain:'upliftai.co',name:'Uplift AI'};
 const answer={search_metadata:{status:'Success',id:'test'},markdown:'Uplift AI helps businesses.',reference_links:[{link:'https://upliftai.co/features'},{link:'javascript:alert(1)'},{link:'https://upliftai.co.evil.example/'}],search_queries:['uplift ai'],response_metadata:{is_web_search_performed:true}};
 async function call(handler,body={action:'scan',business,prompt:'What is Uplift AI?'},headers={}){const req=Readable.from([JSON.stringify(body)]);req.method='POST';req.headers={origin:'http://127.0.0.1:5174',host:'127.0.0.1:5174','content-type':'application/json',...headers};const res={setHeader(){},end(s){this.body=JSON.parse(s);}};await handler(req,res);return res;}
 test('normalizes only evidence and leaves unsupported metrics unassessed',()=>{const row=normalizeAnswer(answer,business,'What is Uplift AI?');assert.equal(row.mentioned,true);assert.equal(row.cited,true);assert.equal(row.position,null);assert.equal(row.comparisonAssessed,false);assert.equal(row.sources.length,2);assert.equal(normalizeAnswer({...answer,reference_links:[{link:'https://upliftai.co.evil.example'}]},business,'x').cited,false);assert.throws(()=>normalizeAnswer({error:'bad'},business,'x'));});
-test('rejects production, foreign origins and paid accounts before search',async()=>{let calls=0;const directory=await mkdtemp(join(tmpdir(),'d2-searchapi-'));try{const request=async()=>{calls++;return {ok:true,json:async()=>({subscription:{},account:{remaining_credits:100,monthly_allowance:100}})}};assert.equal((await call(searchapiHandler())).statusCode,503);const h=searchapiHandler({local:true,key:'test',directory,request});assert.equal((await call(h,undefined,{origin:'https://evil.example'})).statusCode,403);assert.equal((await call(h)).statusCode,402);assert.equal(calls,1);}finally{await rm(directory,{recursive:true});}});
-test('persists answers by business and enforces durable pilot attempts',async()=>{const directory=await mkdtemp(join(tmpdir(),'d2-searchapi-'));let scans=0;const request=async(url,options)=>{assert.equal(options.headers.Authorization,'Bearer test');assert.ok(!url.includes('api_key'));return {ok:true,json:async()=>url.includes('/me')?{account:{remaining_credits:99,monthly_allowance:0}}:(scans++,answer)}};try{let h=searchapiHandler({local:true,key:'test',directory,request});for(let i=0;i<100;i++)assert.equal((await call(h)).statusCode,200);h=searchapiHandler({local:true,key:'test',directory,request});assert.equal((await call(h)).statusCode,429);assert.equal(scans,100);assert.equal((await call(h,{action:'list',business:{name:'Other',domain:'other.example'}})).body.answers.length,0);assert.equal(JSON.parse(await readFile(join(directory,'searchapi.json'))).attempts,100);}finally{await rm(directory,{recursive:true});}});
+test('rejects production, foreign origins and paid accounts before search',async()=>{let calls=0;const directory=await mkdtemp(join(tmpdir(),'d2-searchapi-'));try{const request=async()=>{calls++;return {ok:true,json:async()=>({subscription:{},account:{remaining_credits:100,monthly_allowance:100}})}};assert.equal((await call(searchapiHandler())).statusCode,503);const h=searchapiHandler({local:true,key:'test',analysisKey:'test',directory,request});assert.equal((await call(h,undefined,{origin:'https://evil.example'})).statusCode,403);assert.equal((await call(h)).statusCode,402);assert.equal(calls,1);}finally{await rm(directory,{recursive:true});}});
+test('persists assessed answers by business and enforces durable pilot attempts',async()=>{const directory=await mkdtemp(join(tmpdir(),'d2-searchapi-'));let scans=0,analyses=0;const request=async(url,options)=>{assert.equal(options.headers.Authorization,'Bearer test');assert.ok(!url.includes('api_key'));return {ok:true,json:async()=>url.includes('/me')?{account:{remaining_credits:99,monthly_allowance:0}}:url.includes('openai.com')?(analyses++,{choices:[{finish_reason:'stop',message:{content:JSON.stringify({brands:JSON.parse(JSON.parse(options.body).messages[1].content).brands.map(name=>({name,mentioned:name==='Uplift AI',recommended:null,recommendationEvidence:'',mentionEvidence:name==='Uplift AI'?'Uplift AI helps businesses.':'',sentiment:name==='Uplift AI'?'Neutral':'Not assessed',sentimentEvidence:name==='Uplift AI'?'Uplift AI helps businesses.':'',position:null,positionEvidence:''}))})}}]}):(scans++,answer)}};try{let h=searchapiHandler({local:true,key:'test',analysisKey:'test',analysisBudget:15,directory,request});for(let i=0;i<100;i++){const r=await call(h);assert.equal(r.statusCode,200,JSON.stringify(r.body));};h=searchapiHandler({local:true,key:'test',analysisKey:'test',directory,request});assert.equal((await call(h)).statusCode,429);assert.equal(scans,100);assert.equal(analyses,100);assert.equal((await call(h,{action:'list',business:{name:'Other',domain:'other.example'}})).body.answers.length,0);assert.equal(JSON.parse(await readFile(join(directory,'searchapi.json'))).attempts,100);}finally{await rm(directory,{recursive:true});}});
 test('planned collection reuses saved evidence and never recollects a completed question',async()=>{
  const directory=await mkdtemp(join(tmpdir(),'d2-plan-'));let searches=0,analyses=0;
  const intents=['Discovery','Comparison','Buying decisions','Use cases'];
@@ -81,5 +81,28 @@ test('regional brand identity repairs saved answers without another search credi
   const h=searchapiHandler({local:true,directory,analysisKey:'test',request});
   const before=await call(h,{action:'list',business:adidas});assert.equal(before.body.pendingIdentityCount,1);assert.equal(before.body.answers.length,0);
   const after=await call(h,{action:'reassessIdentity',business:adidas});assert.equal(after.statusCode,200);assert.equal(after.body.pendingIdentityCount,0);assert.equal(after.body.answers[0].mentioned,true);assert.deepEqual(after.body.answers[0].competitors,['Nike']);assert.equal(after.body.answers[0].sources[0],'https://example.org/shoes');assert.equal(analyses,1);assert.equal(searches,0);
+ }finally{await rm(directory,{recursive:true});}
+});
+test('a manual scan uses evidence assessment for a regional site and excludes unfinished analysis',async()=>{
+ const directory=await mkdtemp(join(tmpdir(),'d2-manual-regional-'));
+ const adidas={name:'adidas IN',domain:'adidas.co.in'};
+ let failAssessment=false;
+ const request=async(url,options)=>({ok:true,json:async()=>{
+  if(url.includes('/me'))return {account:{remaining_credits:90,monthly_allowance:0}};
+  if(url.includes('openai.com')){
+   if(failAssessment)throw Error('Analysis unavailable');
+   const input=JSON.parse(JSON.parse(options.body).messages[1].content);
+   assert.deepEqual(input.aliases['adidas IN'],['adidas']);
+   return {choices:[{finish_reason:'stop',message:{content:JSON.stringify({brands:input.brands.map(name=>({name,mentioned:name==='adidas IN',recommended:null,recommendationEvidence:'',mentionEvidence:name==='adidas IN'?'Adidas makes running shoes.':'',sentiment:'Neutral',sentimentEvidence:name==='adidas IN'?'Adidas makes running shoes.':'',position:null,positionEvidence:''}))})}}]};
+  }
+  return {...answer,markdown:'Adidas makes running shoes.',search_metadata:{status:'Success',id:'manual-adidas'}};
+ }});
+ try{
+  const h=searchapiHandler({local:true,key:'test',analysisKey:'test',directory,request});
+  const body={action:'scan',business:adidas,prompt:'Which running shoes should I choose?'};
+  const first=await call(h,body);assert.equal(first.statusCode,200);assert.equal(first.body.answers[0].mentioned,true);assert.equal(first.body.answers[0].assessmentPending,false);
+  failAssessment=true;
+  const second=await call(h,body);assert.equal(second.statusCode,502);
+  const listed=await call(h,{action:'list',business:adidas});assert.equal(listed.body.answers.length,1);assert.equal(listed.body.pendingIdentityCount,1);
  }finally{await rm(directory,{recursive:true});}
 });

@@ -221,15 +221,20 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
    }
    if(action!=='scan')return send(400,{error:'Unknown action.'});
    if(!key)return send(503,{error:'SearchAPI is not configured on this server.'});
+   if(!analysisKey)throw Error('OpenAI analysis is not configured. No collection was started.');
    if(typeof body.prompt!=='string'||!body.prompt.trim()||body.prompt.length>1000)return send(400,{error:'Enter a question of up to 1,000 characters.'});
    if(shared.search>=100)return send(429,{error:'The shared pilot limit of 100 attempts has been reached. No more requests will run.'});
+   if(shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
    const account=await provider('/api/v1/me');
    if(account.subscription || !Number.isFinite(account.account?.remaining_credits) || account.account.remaining_credits<1 || account.account.monthly_allowance!==0)return send(402,{error:'Free-trial access could not be confirmed. No scan was started.'});
    // Reserve before sending: timeouts and failed saves cannot silently spend extra trial credits.
    await reserveShared('search',100,'SearchAPI local pilot limit reached.');state.attempts++;await save(state);
    const data=await provider('/api/v1/search?'+new URLSearchParams({engine:'chatgpt',q:body.prompt.trim(),web_search:'true'}));
-   const answer=normalizeAnswer(data,business,body.prompt.trim());
-   state.answers.push({domain:business.domain,answer});await save(state);
+   const answer={...normalizeAnswer(data,business,body.prompt.trim()),assessmentPending:true};
+   const saved={domain:business.domain,answer};state.answers.push(saved);await save(state);
+   const names=[business.name,...competitors];
+   const assessment=await analyze('Assess each supplied brand in this AI answer using its aliases. Copy verbatim mention, recommendation and sentiment evidence. A short ordinary word is not a brand unless the context clearly identifies that company. Position requires an explicit numbered brand recommendation. Use null or Not assessed for uncertain metrics. Return an entry for every supplied brand.',{brands:names,aliases:aliases(),answer:answer.answer.slice(0,20000)},assessmentSchema);
+   saved.answer=applyAssessment(answer,assessment,names,business.name,aliases());saved.answer.measurementProfile=profile;await save(state);
    return send(200,result());
   }catch(e){if(currentJob&&jobState){currentJob.status='failed';currentJob.error=e.message;currentJob.finishedAt=new Date().toISOString();const schedule=jobState.schedules?.[currentJob.business.domain];if(schedule){schedule.enabled=false;schedule.error=e.message;}try{await save(jobState);}catch{}}return send(/budget reached/.test(e.message)?429:502,{error:/^(Onboarding|Direct collector|OpenAI|SearchAPI|No usable|Saved scans|Coverage|Schedule|Library)/.test(e.message)?e.message:'The scan could not be saved. Check provider history before trying again.'});}finally{if(ownsLock){try{if(leaseToken)await storage.release(leaseToken);}finally{leaseToken=null;busy=false;}}}
  };

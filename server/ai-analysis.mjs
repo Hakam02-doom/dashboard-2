@@ -31,7 +31,7 @@ export function applyAssessment(row,assessment,names,own,aliases={}){
   const position=rank?.position??null;
   metrics[name]={position,sentiment,recommended,recommendationEvidence:recommended?b.recommendationEvidence:'',mentionEvidence:mentioned?(quotePresent(b.mentionEvidence)?b.mentionEvidence:name):'',sentimentEvidence:sentiment!=='Not assessed'?b.sentimentEvidence:'',positionEvidence:rank?.evidence||''};
  }
- return {...row,mentioned:mentions.includes(own),recommended:metrics[own]?.recommended??null,position:metrics[own]?.position??null,sentiment:metrics[own]?.sentiment||'Not assessed',competitors:mentions.filter(n=>n!==own),trackedCompetitors:names.filter(n=>n!==own),competitorMetrics:metrics,brandAssessment:metrics,assessmentAliases:aliases,assessmentMethod:'OpenAI classification with verbatim evidence checks',analysisModel:'gpt-4.1-mini-2025-04-14',comparisonAssessed:names.length>1,measurementVersion:3};
+ return {...row,assessmentPending:false,mentioned:mentions.includes(own),recommended:metrics[own]?.recommended??null,position:metrics[own]?.position??null,sentiment:metrics[own]?.sentiment||'Not assessed',competitors:mentions.filter(n=>n!==own),trackedCompetitors:names.filter(n=>n!==own),competitorMetrics:metrics,brandAssessment:metrics,assessmentAliases:aliases,assessmentMethod:'OpenAI classification with verbatim evidence checks',analysisModel:'gpt-4.1-mini-2025-04-14',comparisonAssessed:names.length>1,measurementVersion:3};
 }
 
 export const planSchema=object({audience:string,products:{type:'array',items:string},questions:{type:'array',items:object({text:string,intent:{type:'string',enum:['Discovery','Comparison','Buying decisions','Use cases']},topic:string})}});

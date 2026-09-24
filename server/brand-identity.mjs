@@ -36,6 +36,7 @@ export function assessmentAliases(business, profile = null, competitors = []) {
 }
 
 export function needsIdentityReview(answer, business, aliases) {
+ if (answer.assessmentPending) return true;
  if (!answer.brandAssessment) return false;
  if ((answer.measurementVersion || 0) < 3 && [business.name,...(answer.trackedCompetitors||[])].some(ambiguousBrandName)) return true;
  if (!Object.hasOwn(answer.brandAssessment, business.name)) return true;
