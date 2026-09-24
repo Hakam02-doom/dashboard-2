@@ -50,7 +50,7 @@ test('blocked sites use bounded, explicitly labeled indexed snippets',async()=>{
  };
  const profile=await searchWebsiteProfile('https://www.adidas.co.in/?campaign=hidden',{client,key:'test-key',request});
   assert.equal(profile.domain,'adidas.co.in');
- assert.equal(profile.name,'Adidas India');
+ assert.equal(profile.name,'Adidas');
  assert.equal(profile.source,'search-results');
  assert.equal(profile.pages.length,1);
  assert.match(profile.scope,/No page content was read/);

@@ -1,3 +1,4 @@
+import {ambiguousBrandName,namedEvidence} from './evidence-normalization.mjs';
 const normalized = value => value.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 export const initialCompetitors = domain => domain === 'upliftai.co' ? ['Semrush','Ahrefs','SE Ranking','BrightLocal','Buffer','ActiveCampaign','Hootsuite'] : [];
 export function validateCompetitors(value, ownName) {
@@ -10,9 +11,8 @@ export function validateCompetitors(value, ownName) {
   seen.add(key);return name.trim();
  });
 }
-export function compareAnswer(row, business, names) {
- const text = ` ${normalized((row.answer || '').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/https?:\/\/\S+/g,''))} `;
- const has = name => text.includes(` ${normalized(name)} `);
+export function compareAnswer(row, business, names, aliases={}) {
+ const has = name => [name,...(aliases[name]||[])].some(identity=>!ambiguousBrandName(identity)&&namedEvidence(row.answer||'',identity));
  // One mention per brand per answer; repeated names never inflate share of voice.
  const mentions = names.filter(has);
  return {...row,mentioned:has(business.name),competitors:mentions,trackedCompetitors:names,

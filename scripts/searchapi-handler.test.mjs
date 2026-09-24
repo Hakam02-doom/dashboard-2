@@ -67,6 +67,19 @@ test('identity review saves without provider calls and retains historical tracke
  try{
  const file=join(directory,'searchapi.json');await writeFile(file,JSON.stringify({attempts:0,answers:[{domain:business.domain,answer:{...normalizeAnswer(answer,business,'Which tools?'),brandAssessment:{},trackedCompetitors:['Old brand']}}]}));
  const h=searchapiHandler({local:true,directory,request:()=>{throw Error('No provider calls expected');}});
- const r=await call(h,{action:'measurementProfile',business,profile:{reviewed:true,aliases:{'Uplift AI':['UpliftAI']}}});assert.equal(r.statusCode,200);assert.deepEqual(r.body.measurementProfile.aliases['Uplift AI'],['UpliftAI']);assert.deepEqual(r.body.answers[0].trackedCompetitors,['Old brand']);
+ const r=await call(h,{action:'measurementProfile',business,profile:{reviewed:true,aliases:{'Uplift AI':['UpliftAI']}}});assert.equal(r.statusCode,200);assert.deepEqual(r.body.measurementProfile.aliases['Uplift AI'],['UpliftAI']);assert.equal(r.body.pendingIdentityCount,1);assert.equal(r.body.answers.length,0);assert.deepEqual(JSON.parse(await readFile(file)).answers[0].answer.trackedCompetitors,['Old brand']);
+ }finally{await rm(directory,{recursive:true});}
+});
+test('regional brand identity repairs saved answers without another search credit',async()=>{
+ const directory=await mkdtemp(join(tmpdir(),'d2-regional-repair-'));
+ const adidas={name:'adidas IN',domain:'adidas.co.in'};
+ const text='Adidas and Nike make running shoes. Choose shoes based on fit.';
+ let analyses=0,searches=0;
+ try{
+  await writeFile(join(directory,'searchapi.json'),JSON.stringify({attempts:1,answers:[{domain:adidas.domain,answer:{id:'old-adidas',at:new Date().toISOString(),engine:'ChatGPT Search',prompt:'Which running shoes should I buy?',answer:text,sources:['https://example.org/shoes'],mentioned:false,competitors:['Nike','On'],trackedCompetitors:['Nike','On'],brandAssessment:{'adidas IN':{},Nike:{},On:{}},measurementVersion:2}}],competitors:{[adidas.domain]:['Nike','On']}}));
+  const request=async(url,options)=>{if(!url.includes('openai.com')){searches++;throw Error('Search collection must not run during repair');}analyses++;const input=JSON.parse(JSON.parse(options.body).messages[1].content);assert.deepEqual(input.aliases['adidas IN'],['adidas']);return {ok:true,json:async()=>({choices:[{finish_reason:'stop',message:{content:JSON.stringify({brands:input.brands.map(name=>({name,mentioned:name!=='On',recommended:null,recommendationEvidence:'',mentionEvidence:name==='adidas IN'?'Adidas and Nike make running shoes.':name==='Nike'?'Adidas and Nike make running shoes.':'',sentiment:'Not assessed',sentimentEvidence:'',position:null,positionEvidence:''}))})}}],usage:{prompt_tokens:50,completion_tokens:40}})};};
+  const h=searchapiHandler({local:true,directory,analysisKey:'test',request});
+  const before=await call(h,{action:'list',business:adidas});assert.equal(before.body.pendingIdentityCount,1);assert.equal(before.body.answers.length,0);
+  const after=await call(h,{action:'reassessIdentity',business:adidas});assert.equal(after.statusCode,200);assert.equal(after.body.pendingIdentityCount,0);assert.equal(after.body.answers[0].mentioned,true);assert.deepEqual(after.body.answers[0].competitors,['Nike']);assert.equal(after.body.answers[0].sources[0],'https://example.org/shoes');assert.equal(analyses,1);assert.equal(searches,0);
  }finally{await rm(directory,{recursive:true});}
 });

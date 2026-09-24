@@ -8,6 +8,7 @@ import {localCollectorStore} from './collector-store.mjs';
 import {crawlCoverage,coverageSchema,verifyCoverage,coveragePage} from './page-coverage.mjs';
 import {validateSchedule,enqueueDue} from './collection-schedule.mjs';
 import { namedEvidence } from './evidence-normalization.mjs';
+import {assessmentAliases,needsIdentityReview} from './brand-identity.mjs';
 import { validateMeasurementProfile } from './measurement-profile.mjs';
 import { analyzeJSON, discoverySchema, assessmentSchema, applyAssessment, planSchema, validatePlan } from './ai-analysis.mjs';
 import { initialCompetitors, validateCompetitors, compareAnswer } from './competitor-analysis.mjs';
@@ -57,7 +58,9 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
 
    let competitors=state.competitors?.[business.domain] ?? initialCompetitors(business.domain);
    const profile=state.measurementProfiles?.[business.domain]||null;
-   const result=()=>({directCollectors:directStatus(direct,{...state,directAttempts:shared.direct}),googleTrafficConfigured:!!googleTraffic?.configured,googleServiceAccount:googleTraffic?.serviceAccount||null,googleProperties:state.googleProperties?.[business.domain]||{ga4PropertyId:'',gscSiteUrl:''},storage:storage.kind,sourceMetadata:state.sourceMetadata?.[business.domain]||{},insightAnnotations:state.insightAnnotations?.[business.domain]||{},factReviews:state.factReviews?.[business.domain]||{},opportunityActions:state.opportunityActions?.[business.domain]||{},library:state.libraries?.[business.domain]||null,coverage:state.coverage?.[business.domain]||{},crawl:state.crawls?.[business.domain]?{at:state.crawls[business.domain].at,scope:state.crawls[business.domain].scope}:null,schedule:state.schedules?.[business.domain]||null,jobs:(state.jobs||[]).filter(j=>j.business.domain===business.domain).slice(-50),measurementProfile:state.measurementProfiles?.[business.domain]||null,analysisBudget:{limit:budget,estimatedCost:state.analysisCost||0,reserved:shared.analysis*0.05},plan:state.plans?.[business.domain]||null,report:state.reports?.[business.domain]||null,analysisConfigured:!!analysisKey,competitors,answers:state.answers.filter(r=>r.domain===business.domain).map(r=>({...r.answer.brandAssessment?refreshPositions(r.answer,business.name):compareAnswer(r.answer,business,competitors),sourceMetadata:state.sourceMetadata?.[business.domain]||{}})),configured:!!key,attemptsRemaining:Math.max(0,100-shared.search)});
+   const aliases=()=>assessmentAliases(business,profile,competitors);
+   const pendingIdentity=()=>state.answers.filter(r=>r.domain===business.domain&&needsIdentityReview(r.answer,business,aliases()));
+   const result=()=>({directCollectors:directStatus(direct,{...state,directAttempts:shared.direct}),googleTrafficConfigured:!!googleTraffic?.configured,googleServiceAccount:googleTraffic?.serviceAccount||null,googleProperties:state.googleProperties?.[business.domain]||{ga4PropertyId:'',gscSiteUrl:''},storage:storage.kind,sourceMetadata:state.sourceMetadata?.[business.domain]||{},insightAnnotations:state.insightAnnotations?.[business.domain]||{},factReviews:state.factReviews?.[business.domain]||{},opportunityActions:state.opportunityActions?.[business.domain]||{},library:state.libraries?.[business.domain]||null,coverage:state.coverage?.[business.domain]||{},crawl:state.crawls?.[business.domain]?{at:state.crawls[business.domain].at,scope:state.crawls[business.domain].scope}:null,schedule:state.schedules?.[business.domain]||null,jobs:(state.jobs||[]).filter(j=>j.business.domain===business.domain).slice(-50),measurementProfile:state.measurementProfiles?.[business.domain]||null,analysisBudget:{limit:budget,estimatedCost:state.analysisCost||0,reserved:shared.analysis*0.05},plan:state.plans?.[business.domain]||null,report:state.reports?.[business.domain]||null,analysisConfigured:!!analysisKey,competitors,pendingIdentityCount:pendingIdentity().length,answers:state.answers.filter(r=>r.domain===business.domain&&!needsIdentityReview(r.answer,business,aliases())).map(r=>({...r.answer.brandAssessment?refreshPositions(r.answer,business.name):compareAnswer(r.answer,business,competitors,aliases()),sourceMetadata:state.sourceMetadata?.[business.domain]||{}})),configured:!!key,attemptsRemaining:Math.max(0,100-shared.search)});
    if(action==='list')return send(200,result());
    if(action==='googleProperties'){let properties;try{properties=validateGoogleProperties(body.properties,business.domain);}catch(e){return send(400,{error:e.message});}state.googleProperties={...state.googleProperties,[business.domain]:properties};await save(state);return send(200,result());}
    if(action==='trafficReport'){
@@ -86,6 +89,17 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
    if(action==='competitors'){try{competitors=validateCompetitors(body.competitors,business.name);}catch(e){return send(400,{error:e.message});}state.competitors={...state.competitors,[business.domain]:competitors};await save(state);return send(200,result());}
    const reserve=async()=>{await reserveShared('analysis',maximumAnalysisAttempts,'OpenAI pilot budget reached. No more analysis requests will run.');state.analysisAttempts=(state.analysisAttempts||0)+1;await save(state);};
    const analyze=async(instructions,input,schema)=>{const data=await analyzeJSON({key:analysisKey,instructions,input,schema,reserve,request});state.analysisCost=(state.analysisCost||0)+data.cost;await save(state);return data.result;};
+   if(action==='reassessIdentity'){
+    if(!analysisKey)throw Error('OpenAI analysis is not configured.');
+    const pending=pendingIdentity().slice(0,3);
+    for(const saved of pending){
+     const names=[business.name,...(saved.answer.trackedCompetitors||competitors).filter(name=>name!==business.name)];
+     const assessment=await analyze('Reassess the exact brand identities in this previously collected AI answer. Use the supplied aliases, including regional website names. Return one entry per brand with verbatim mention, recommendation and sentiment excerpts. A short ordinary word is not a brand unless its surrounding text clearly identifies that company. Return Not assessed or null when evidence is uncertain. Do not invent facts or change the answer.',{brands:names,aliases:aliases(),answer:saved.answer.answer.slice(0,20000)},assessmentSchema);
+     saved.answer=applyAssessment(saved.answer,assessment,names,business.name,aliases());
+     saved.answer.measurementProfile=profile;await save(state);
+    }
+    return send(200,result());
+   }
    const collect=async(prompt,engine='chatgpt')=>{
     if(DIRECT_ENGINES.includes(engine))return collectDirect({engine,config:direct,business,prompt,request,reserve:async()=>{await reserveShared('direct',direct.limit||0,'Direct collector: request allowance reached.');state.directAttempts=(state.directAttempts||0)+1;await save(state);}});
     if(!key)throw new Error('SearchAPI is not configured.');
@@ -149,8 +163,8 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
     if(shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
     if(!saved){const answer=await collect(q.text.trim(),collectionEngine);answer.topic=q.topic;answer.type=[business.name,business.domain,...competitors,...Object.values(profile?.aliases||{}).flat()].some(name=>namedEvidence(q.text,name))?'Branded':q.type;saved={domain:business.domain,collectionEngine,answer};state.answers.push(saved);await save(state);}
     const names=[business.name,...competitors];
-    const assessment=await analyze('Assess each supplied brand in the answer. Return an entry for every brand. Copy verbatim mention and sentiment evidence. Position must be an explicit numbered brand recommendation; never use numbered topic headings or casual mention order. Unknown sentiment is Not assessed; unknown rank is null.',{brands:names,aliases:profile?.aliases||{},answer:saved.answer.answer.slice(0,20000)},assessmentSchema);
-    saved.answer=applyAssessment(saved.answer,assessment,names,business.name,profile?.aliases||{});saved.answer.measurementProfile=profile;await save(state);await finishJob();return send(200,result());
+    const assessment=await analyze('Assess each supplied brand in the answer using its aliases. Return an entry for every brand. Copy verbatim mention and sentiment evidence. A short ordinary word is not a brand unless its surrounding text clearly identifies that company. Position must be an explicit numbered brand recommendation; never use numbered topic headings or casual mention order. Unknown sentiment is Not assessed; unknown rank is null.',{brands:names,aliases:aliases(),answer:saved.answer.answer.slice(0,20000)},assessmentSchema);
+    saved.answer=applyAssessment(saved.answer,assessment,names,business.name,aliases());saved.answer.measurementProfile=profile;await save(state);await finishJob();return send(200,result());
    }
    if(action==='plan'){
     if(state.plans?.[business.domain])return send(200,result());
@@ -168,8 +182,8 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
     if(shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
     if(!saved){const answer=await collect(q.text,collectionEngine);answer.topic=q.topic;answer.type='Unbranded';saved={domain:business.domain,promptId:q.id,collectionEngine,answer};state.answers.push(saved);await save(state);}
     const names=[business.name,...competitors];
-    const assessment=await analyze('Assess each supplied brand in the answer. Return an entry for every brand. Copy verbatim mention and sentiment evidence. Position must be an explicit numbered brand recommendation; never use numbered topic headings or casual mention order. Unknown sentiment is Not assessed; unknown rank is null.',{brands:names,aliases:profile?.aliases||{},answer:saved.answer.answer.slice(0,20000)},assessmentSchema);
-    saved.answer={...applyAssessment(saved.answer,assessment,names,business.name,profile?.aliases||{}),promptId:q.id,measurementProfile:profile};await save(state);return send(200,result());
+    const assessment=await analyze('Assess each supplied brand in the answer using its aliases. Return an entry for every brand. Copy verbatim mention and sentiment evidence. A short ordinary word is not a brand unless its surrounding text clearly identifies that company. Position must be an explicit numbered brand recommendation; never use numbered topic headings or casual mention order. Unknown sentiment is Not assessed; unknown rank is null.',{brands:names,aliases:aliases(),answer:saved.answer.answer.slice(0,20000)},assessmentSchema);
+    saved.answer={...applyAssessment(saved.answer,assessment,names,business.name,aliases()),promptId:q.id,measurementProfile:profile};await save(state);return send(200,result());
    }
    if(action==='baseline'){
     if(shared.analysis>=maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No collection was started.');
@@ -198,8 +212,8 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
       let saved=state.answers.find(r=>r.domain===business.domain&&r.baselineId===report.startedAt&&r.questionIndex===i);
       if(!saved){const answer=await collect(prompt);answer.topic=['Discovery','Comparison','Buying decisions'][i];answer.type='Unbranded';saved={domain:business.domain,answer,baselineId:report.startedAt,questionIndex:i};state.answers.push(saved);await save(state);}
       const names=[business.name,...competitors];
-      const assessment=await analyze('Analyze how each supplied brand is represented in this answer. Distinguish the specific business from unrelated names. Mention, sentiment and position each need a VERBATIM supporting excerpt copied from the answer. Sentiment describes the answer portrayal, not your view. Position is ONLY an explicit ordered recommendation rank, never search-result order or order of casual mention. Return null for absent/ambiguous rankings and Not assessed for uncertain sentiment. Return an entry for every supplied brand.',{brands:names,aliases:profile?.aliases||{},answer:saved.answer.answer.slice(0,20000)},assessmentSchema);
-      saved.answer=applyAssessment(saved.answer,assessment,names,business.name,profile?.aliases||{});report.completed.push(i);await save(state);
+      const assessment=await analyze('Analyze how each supplied brand is represented in this answer using its aliases. Distinguish the specific business from unrelated names. A short ordinary word is not a brand unless its surrounding text clearly identifies that company. Mention, sentiment and position each need a VERBATIM supporting excerpt copied from the answer. Sentiment describes the answer portrayal, not your view. Position is ONLY an explicit ordered recommendation rank, never search-result order or order of casual mention. Return null for absent/ambiguous rankings and Not assessed for uncertain sentiment. Return an entry for every supplied brand.',{brands:names,aliases:aliases(),answer:saved.answer.answer.slice(0,20000)},assessmentSchema);
+      saved.answer=applyAssessment(saved.answer,assessment,names,business.name,aliases());report.completed.push(i);await save(state);
      }
      report.status='complete';report.finishedAt=new Date().toISOString();await save(state);
     }catch(e){report.status='partial';report.error=/^(OpenAI|SearchAPI|No usable|The buyer)/.test(e.message)?e.message:'The baseline could not finish. Saved evidence has been preserved.';await save(state);}

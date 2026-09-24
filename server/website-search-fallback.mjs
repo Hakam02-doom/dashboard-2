@@ -1,5 +1,6 @@
 import {websiteUrl} from './website-analysis.mjs';
 import {cloudBudgetStore} from './collector-store.mjs';
+import {canonicalWebsiteName,domainBrandLabel} from './brand-identity.mjs';
 
 /** Indexed snippets are a limited fallback when a public site rejects server reads. */
 export async function searchWebsiteProfile(input,{client,key,request=fetch,now=new Date()}={}){
@@ -13,7 +14,7 @@ export async function searchWebsiteProfile(input,{client,key,request=fetch,now=n
  const budget=cloudBudgetStore(client),usage=await budget.usage();
  if(usage.search>=100||!(await budget.reserve('search',100)))throw Error('Shared search trial limit reached.');
  const region={in:'India',uk:'United Kingdom',au:'Australia',ca:'Canada',de:'Germany',fr:'France',jp:'Japan',sg:'Singapore',nz:'New Zealand'}[domain.split('.').at(-1)]||'';
- const query=`${domain.split('.')[0].replace(/[-_]/g,' ')} ${region} official website`.replace(/\s+/g,' ').trim();
+ const query=`${domainBrandLabel(domain).replace(/[-_]/g,' ')} ${region} official website`.replace(/\s+/g,' ').trim();
  const response=await request('https://www.searchapi.io/api/v1/search?'+new URLSearchParams({engine:'google',q:query}),{headers,signal:AbortSignal.timeout(20000),redirect:'error'});
  if(!response.ok)throw Error('Search snippet fallback did not return usable results.');
  const data=await response.json();
@@ -24,7 +25,7 @@ export async function searchWebsiteProfile(input,{client,key,request=fetch,now=n
  const first=rows.find(row=>{try{return websiteUrl(row.link).pathname==='/';}catch{return false;}})||rows[0];
  const clean=value=>String(value||'').replace(/\s+/g,' ').trim();
  const source=clean(first.source),titleName=clean(first.title?.split(/\s[|–—]\s/)[0]).replace(/\b(?:official website|homepage)\b/ig,'').trim();
- const name=(source&&!source.toLowerCase().includes(domain)?source:titleName||domain.split('.')[0]).slice(0,100);
+ const name=canonicalWebsiteName((source&&!source.toLowerCase().includes(domain)?source:titleName||domainBrandLabel(domain)).slice(0,100),domain);
  const description=clean(first.snippet).slice(0,600);
  if(!name||!description)throw Error('Indexed results did not include enough business details.');
  return {domain,url:url.href,name,description,headings:[],schemaTypes:[],title:clean(first.title).slice(0,200),analyzedAt:now.toISOString(),source:'search-results',searchVersion:2,wordCount:0,language:'',pages:rows.map(row=>({url:websiteUrl(row.link).href,title:clean(row.title).slice(0,200),description:clean(row.snippet).slice(0,600),headings:[]})),scope:`${rows.length} indexed search snippets reviewed; the website blocked automated reading. No page content was read.`};

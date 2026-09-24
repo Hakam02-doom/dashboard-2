@@ -2,6 +2,7 @@ import https from 'node:https';
 import { lookup } from 'node:dns/promises';
 import ipaddr from 'ipaddr.js';
 import { load } from 'cheerio';
+import {canonicalWebsiteName} from './brand-identity.mjs';
 
 export function websiteUrl(input) {
   if (typeof input !== 'string' || input.length > 2048) throw new Error('Enter a public business website.');
@@ -69,7 +70,7 @@ export function extractBusiness(html, sourceUrl, now = new Date()) {
   $('script[type="application/ld+json"]').slice(0, 20).each((_, el) => { try { visit(JSON.parse($(el).text())); } catch { /* A malformed block is not evidence. */ } });
   $('script').remove();
   const url = new URL(sourceUrl);
-  const name = text(organization || $('meta[property="og:site_name"]').attr('content') || title.split(/\s[|–—]\s/)[0] || url.hostname).slice(0, 100);
+  const name = canonicalWebsiteName(text(organization || $('meta[property="og:site_name"]').attr('content') || title.split(/\s[|–—]\s/)[0] || url.hostname).slice(0, 100),url.hostname);
   const body = text($('body').text());
   return { domain: url.hostname.replace(/^www\./, ''), url: url.href, name, description: description || text($('main p,p').first().text()).slice(0, 600), headings, schemaTypes: [...schemaTypes].slice(0, 20), title, analyzedAt: now.toISOString(), source: 'website', wordCount: body ? body.split(/\s+/).length : 0, language: text($('html').attr('lang')).slice(0, 20), scope: 'Submitted page only; no JavaScript rendering or AI-answer collection.' };
 }
