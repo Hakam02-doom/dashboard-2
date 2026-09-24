@@ -97,3 +97,112 @@
     font-size: 12px;
   }
 }
+
+/* AI Insights uses the same reading hierarchy as the rest of Dashboard 2.
+   Keep chart annotations compact, but do not shrink card copy or data tables. */
+@media (min-width: 851px) {
+  #root .aiv-insights :is(.ip-pages, .mp-page) {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  #root .aiv-insights :is(.ip-card > header h3, .mp-card-header h3, .avr-card > header h3) {
+    font-size: 16px;
+    line-height: 1.35;
+    font-weight: 600;
+  }
+  #root .aiv-insights :is(.ip-card > header > span, .mp-subtitle, .avr-card > header > span,
+    .ip-stat > span, .mp-stat > span, .avr-score > span, .ip-fanout-heading > div > span,
+    .ip-map-caption span, .ip-location-note, .aiv-report-status, .aiv-filters > span) {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  #root .aiv-insights :is(.ip-pages button, .ip-pages select, .mp-card button,
+    .mp-card select, .avr-card button, .avr-card select) {
+    font-size: 14px;
+  }
+  #root .aiv-insights :is(.ip-search input, .mp-search input) {
+    font-size: 16px;
+  }
+  #root .aiv-insights :is(.ip-table-scroll table, .mp-response-table, .avr-rank-scroll table,
+    .avr-position-table table) {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  #root .aiv-insights :is(.ip-table-scroll th, .mp-response-table th, .avr-rank-scroll th,
+    .avr-position-table th) {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  #root .aiv-insights :is(.ip-card > footer, .mp-card-footer, .avr-card > footer,
+    .ip-note, .ip-location-note, .mp-measurement-note, .mp-count) {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  #root .aiv-insights :is(.ip-response small, .ip-pill, .ip-facts small,
+    .ip-treemap small, .mp-stage-list small, .mp-citation-details small,
+    .avr-legend, .avr-bar-name, .avr-donut-legend) {
+    font-size: 13px;
+  }
+  #root .aiv-insights :is(.ip-perception blockquote p, .ip-facts p, .ip-drawer-body,
+    .mp-stage-list p, .mp-citation-details > div, .mp-answer-cell) {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  #root .aiv-insights :is(.ip-fanout-detail summary, .ip-fanout-query,
+    .ip-topic-analysis summary, .mp-coverage-summary b) {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  #root .aiv-insights :is(.ip-fanout-heading h2, .ip-drawer h2) {
+    font-size: 22px;
+    line-height: 1.3;
+  }
+  #root .aiv-insights :is(.ip-fanout-heading p, .ip-empty p, .mp-chart-empty) {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  #root .aiv-insights :is(.ip-chart text, .mp-chart svg text) {
+    font-size: 12px;
+  }
+  #root .aiv-insights :is(.mp-coverage-summary span, .mp-coverage-legend,
+    .mp-citation-ring-inner span, .mp-chart-legend) {
+    font-size: 14px;
+  }
+  #root .aiv-insights :is(.avr-brand, .avr-donut-legend .avr-brand) {
+    font-size: 16px;
+  }
+  #root .pr-workspace .pr-table th,
+  #root .pr-workspace .pr-table th > button {
+    font-size: 14px;
+  }
+  #root .pr-workspace .pr-table td {
+    font-size: 14px;
+  }
+  #root .pr-workspace .pr-question > button {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  #root .pr-workspace :is(.pr-search input, .pr-select select, .pr-filters select) {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 850px) {
+  #root .aiv-insights :is(.ip-pages, .mp-page, .ip-drawer-body) {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  #root .aiv-insights :is(.ip-card > header h3, .mp-card-header h3, .avr-card > header h3) {
+    font-size: 16px;
+  }
+  #root .aiv-insights :is(.ip-search input, .mp-search input),
+  #root .pr-workspace .pr-search input {
+    font-size: 16px;
+  }
+  #root .aiv-insights :is(.ip-table-scroll table, .mp-response-table, .avr-rank-scroll table) {
+    font-size: 14px;
+  }
+  #root .aiv-insights :is(.ip-table-scroll th, .mp-response-table th, .avr-rank-scroll th) {
+    font-size: 13px;
+  }
+}
