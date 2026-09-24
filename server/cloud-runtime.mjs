@@ -7,7 +7,7 @@ import {timingSafeEqual} from 'node:crypto';
 import {cloudCollectorStore,cloudBudgetStore,localCollectorStore} from './collector-store.mjs';
 import {searchapiHandler} from './searchapi-handler.mjs';
 const localOrigins=['http://127.0.0.1:5174','http://localhost:5174'];
-export function serverClient(env){const url=env.VITE_SUPABASE_URL||env.SUPABASE_URL,key=env.SUPABASE_SERVICE_ROLE_KEY;return url&&key?createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}):null;}
+export function serverClient(env){const url=env.VITE_SUPABASE_URL||env.SUPABASE_URL,key=env.SUPABASE_SERVICE_ROLE_KEY;return url&&key?createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{fetch:(url,options={})=>fetch(url,{...options,signal:options.signal?AbortSignal.any([options.signal,AbortSignal.timeout(15000)]):AbortSignal.timeout(15000)})}}):null;}
 function unavailable(){const error=new Error('The monitoring service is temporarily unavailable. Please try again shortly.');error.status=503;return error;}
 async function authUser(client,token){
  let timer;

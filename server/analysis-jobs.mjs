@@ -58,9 +58,10 @@ export function journaledRequest(client,jobId,request=fetch){
    return new Response(JSON.stringify(data.response),{status:data.http_status,headers:{'Content-Type':'application/json'}});
   }
   if(reserve)await reserve();
+  const started=Date.now();
   const response=await request(url,options);
   const data=await response.json();
-  const {error}=await client.from('ai_analysis_requests').update({status:'complete',response:data,http_status:response.status}).eq('job_id',jobId).eq('fingerprint',fingerprint);
+  const {error}=await client.from('ai_analysis_requests').update({status:'complete',response:data,http_status:response.status,duration_ms:Date.now()-started,provider_kind:String(url).endsWith('/responses')?'search':'assessment'}).eq('job_id',jobId).eq('fingerprint',fingerprint);
   if(error)throw Error('Saved scans provider response could not be stored. Automatic collection stopped to prevent duplicate charges.');
   return new Response(JSON.stringify(data),{status:response.status,headers:{'Content-Type':'application/json'}});
  };
@@ -68,8 +69,15 @@ export function journaledRequest(client,jobId,request=fetch){
  return journal;
 }
 export async function runAnalysisStep(job,{client,env,request=fetch,analyze=analyzeWebsite}){
- const store=cloudCollectorStore(client,job.owner_id),journal=journaledRequest(client,job.id,request);
+ const deadline=Date.now()+210000;
+ const boundedRequest=(url,options={})=>request(url,{...options,signal:AbortSignal.any([...(options.signal?[options.signal]:[]),AbortSignal.timeout(Math.max(1,deadline-Date.now()))])});
+ const store=cloudCollectorStore(client,job.owner_id),journal=journaledRequest(client,job.id,boundedRequest);
  if(!job.profile){
+  const lock=await store.acquire();
+  if(!lock)return {status:'queued',stage:'Preparing your new analysis',progress:0,delay:3};
+  try{
+   const state=await store.load();
+   if(state.activeRunId!==job.id)await rpc(client,'ai_analysis_discard_previous',{account_id:job.owner_id,current_job:job.id,lock_id:lock});
   let profile;
   try{profile=await analyze(job.url);}catch(e){
    if(!/HTTP (403|429)|took too long to (respond|resolve)/i.test(e.message||''))throw e;
@@ -77,8 +85,18 @@ export async function runAnalysisStep(job,{client,env,request=fetch,analyze=anal
   }
   const {error}=await client.from('ai_businesses').upsert({owner_id:job.owner_id,domain:profile.domain,name:profile.name,profile},{onConflict:'owner_id,domain'});if(error)throw Error('The business details could not be saved.');
   return {status:'queued',stage:'Finding competitors',progress:10,profile};
+  }finally{await store.release(lock);}
  }
- const handler=searchapiHandler({local:true,key:env.SEARCHAPI_API_KEY,analysisKey:env.OPENAI_API_KEY,analysisBudget:Number(env.AI_ANALYSIS_BUDGET_USD||1),store,budgetStore:cloudBudgetStore(client),request:journal});
+ const activeJobs=await client.from('ai_analysis_jobs').select('id',{count:'exact',head:true}).in('status',['queued','running']).abortSignal(AbortSignal.timeout(5000));
+ const concurrency=activeJobs.error?8:Math.max(8,Math.floor(24/Math.min(3,Math.max(1,activeJobs.count||1))));
+ let lastProgress=0;
+ const onBenchmarkProgress=async(measured)=>{
+  if(measured<4||measured-lastProgress<4)return;
+  lastProgress=measured;
+  // This checkpoint is cosmetic. Answer persistence has already succeeded.
+  await client.from('ai_analysis_jobs').update({stage:`Analyzing buyer questions · ${measured} of 100 measured`,progress:20+Math.floor(measured*.79),updated_at:new Date().toISOString()}).eq('id',job.id).eq('lease',job.lease).abortSignal(AbortSignal.timeout(5000));
+ };
+ const handler=searchapiHandler({local:true,key:env.SEARCHAPI_API_KEY,analysisKey:env.OPENAI_API_KEY,analysisBudget:Number(env.AI_ANALYSIS_BUDGET_USD||1),store,budgetStore:cloudBudgetStore(client),request:journal,benchmarkConcurrency:concurrency,onBenchmarkProgress});
  const req=internalRequest({action:job.target===100?'benchmarkStep':'baselineStep',business:job.profile});req.internalWorker=true;
  let status,result;await handler(req,{setHeader(){},set statusCode(v){status=v;},end(raw){result=JSON.parse(raw);}});
  if(result?.code==='ANALYSIS_BUSY')return {status:'queued',stage:'Waiting for your previous analysis',progress:job.progress,delay:15};
@@ -105,7 +123,8 @@ export function createJobsWorker(env,{client=serverClient(env),step=runAnalysisS
    let next;
    try{next=await step(job,{client,env});}catch(e){
     const known=/^(OpenAI|SearchAPI|Saved scans|The website|This website|No usable|Indexed|Shared|Search snippet|The business|Analysis)/.test(e.message||'');
-    next={status:'failed',stage:'Analysis needs attention',progress:job.progress,error:known?e.message:'Analysis was interrupted. Saved answers are preserved; please try again later.'};
+    const storageFailure=/Saved scans cloud storage failed|request journal is unavailable|Shared collection budget could not be checked/.test(e.message||'');
+    next=storageFailure&&job.attempts<3?{status:'queued',stage:'Reconnecting to analysis storage',progress:job.progress,delay:15}:{status:'failed',stage:'Analysis needs attention',progress:job.progress,error:known?e.message:'Analysis was interrupted. Saved answers are preserved; please try again later.'};
    }
    const finished=await rpc(client,'ai_analysis_finish',{job_id:job.id,lock_id:job.lease,new_status:next.status,new_stage:next.stage,new_progress:next.progress,new_profile:next.profile||null,failure:next.error||null,delay_seconds:next.delay||0});
    if(!finished)throw Error('Worker lease expired.');

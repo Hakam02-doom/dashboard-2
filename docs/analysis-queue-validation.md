@@ -29,3 +29,14 @@
   completed questions are not recollected, and workspace saves never overlap.
 - Onboarding opens the report after four assessed answers. It retains the active
   job ID so refresh and background completion remain resumable.
+
+## Pipelined current-site-only analysis
+
+- Four intent planners execute concurrently; cross-intent duplicate validation still runs when merging.
+- 100-question simulated run passes through 100 separate searches and 100 evidence assessments, with a rejected planning batch repaired. No completed question is recollected on restart.
+- Batch tests verify 24-call overlap, immediate assessment of fast answers before slow sibling searches, saved-answer recovery and preservation of successful siblings on failure.
+- Coalesced-save tests verify revision durability, single-writer behavior and failure propagation.
+- Current-site tests verify replacing profiles and restoring only the selected site from legacy browser history.
+- Production SQL transaction (rolled back) verified duplicate submission reuse, fresh website switch, owner isolation, clearing old answers and unchanged budget counters.
+- Supabase was observed RESTARTING during verification and later ACTIVE_HEALTHY. This infrastructure interruption is separate from orchestration timing.
+- 100-question fresh provider latency remains unverified. At the database migration, 417 of 500 conservative reservations were already used ($20.85 of the $25 shared allowance). This remaining allowance cannot cover a new 204-call test; the cap was not increased or reset.

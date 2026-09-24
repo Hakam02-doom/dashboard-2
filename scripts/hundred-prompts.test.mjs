@@ -18,13 +18,13 @@ test('100-question durable run splits calls, survives restarts, and produces 100
   if(url.endsWith('/responses')){searches++;assert.equal(body.max_tool_calls,2);data={id:`answer-${searches}`,status:'completed',output:[{type:'web_search_call',action:{type:'search'}},{type:'message',content:[{type:'output_text',text:'Acme makes running shoes.',annotations:[{url:'https://acme.com/shoes'}]}]}]};}
   else {const input=JSON.parse(body.messages[1].content);let result;
    if(input.brands){assessments++;result={brands:[{name:'Acme',mentioned:true,mentionEvidence:'Acme makes running shoes.',recommended:false,recommendationEvidence:'',sentiment:'Neutral',sentimentEvidence:'Acme makes running shoes.',position:null,positionEvidence:''}],discoveredBrands:[]};}
-   else{const batch=nextPromptBatch(state.plans?.['acme.com']?.questions);plans++;result=plans===2?{questions:state.plans['acme.com'].questions.map(q=>({...q,intent:batch.intent}))}:makeBatch(batch.intent,batch.count);}
+   else{const intent=BUYER_INTENTS.find(value=>body.messages[0].content.includes('intent \"'+value+'\"'));plans++;result=makeBatch(intent,plans===2?24:25);}
    data={choices:[{finish_reason:'stop',message:{content:JSON.stringify(result)}}]};
   }return {ok:true,json:async()=>data};
  };
  const call=async(internal=true)=>{const handler=searchapiHandler({local:true,analysisKey:'fake',analysisBudget:25,store,request});const req=Readable.from([JSON.stringify({action:'benchmarkStep',business:{name:'Acme',domain:'acme.com',description:'Running shoes'}})]);req.method='POST';req.internalWorker=internal;req.headers={origin:'http://127.0.0.1:5174',host:'127.0.0.1:5174','content-type':'application/json'};const res={setHeader(){},end(raw){this.body=JSON.parse(raw);}};await handler(req,res);return res;};
  assert.equal((await call(false)).statusCode,403);
- for(let i=0;i<55;i++){const before=paid;const r=await call();assert.equal(r.statusCode,200,JSON.stringify(r.body));assert.equal(paid-before,i<5?1:4);assert.notEqual(r.body.benchmark?.status,'partial');}
+ for(let i=0;i<7;i++){const before=paid;const r=await call();assert.equal(r.statusCode,200,JSON.stringify(r.body));assert.equal(paid-before,i===0?4:i===1?1:i===6?8:48);assert.notEqual(r.body.benchmark?.status,'partial');}
  const done=await call();assert.equal(paid,205);assert.equal(plans,5);assert.equal(searches,100);assert.equal(assessments,100);assert.equal(done.body.answers.length,100);assert.equal(done.body.benchmark.completed.length,100);assert.equal(done.body.benchmark.status,'complete');assert.equal(done.body.analysisBudget.limit,25);
  assert.deepEqual(state.answers.slice(0,4).map(row=>state.plans['acme.com'].questions.find(q=>q.id===row.promptId).intent),BUYER_INTENTS);
  await call();assert.equal(paid,205);

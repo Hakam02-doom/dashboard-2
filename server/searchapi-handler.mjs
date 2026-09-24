@@ -1,5 +1,6 @@
+import {coalescedSave} from './coalesced-save.mjs';
 import {runBenchmarkBatch} from './benchmark-batch.mjs';
-import {nextPromptBatch,appendPromptBatch,PROMPT_TARGET} from './hundred-prompts.mjs';
+import {BUYER_INTENTS,appendPromptBatch,PROMPT_TARGET} from './hundred-prompts.mjs';
 import {requestWithReservation} from './provider-request.mjs';
 import {refreshPositions} from './answer-position.mjs';
 import {rollbackOnboarding} from './rollback-onboarding.mjs';
@@ -25,16 +26,12 @@ export function normalizeAnswer(data, business, prompt, engine='chatgpt') {
   const mentioned = (` ${normalize(data.markdown)} `).includes(` ${normalize(business.name)} `);
   return { id: data.search_metadata.id, at: new Date().toISOString(), engine:({chatgpt:'ChatGPT Search',gemini:'Gemini',perplexity:'Perplexity'})[engine], method:`SearchAPI · ${engine}`, prompt, answer:data.markdown, mentioned, cited:sources.some(s=>{const h=new URL(s).hostname.replace(/^www\./,'');return h===business.domain||h.endsWith('.'+business.domain);}), position:null, sentiment:'Not assessed', topic:'Manual scans', type:normalize(prompt).includes(normalize(business.name))?'Branded':'Unbranded', location:'Not specified', sources, fanout:(data.search_queries||[]).filter(q=>typeof q==='string'), competitors:[], comparisonAssessed:false, webSearchPerformed:data.response_metadata?.is_web_search_performed===true, model:data.response_metadata?.model||null };
 }
-export function searchapiHandler({local=false, key='', analysisKey='', analysisBudget=1, direct={}, googleTraffic=null, directory, store, budgetStore=null, request=fetch, crawl=crawlCoverage}={}) {
+export function searchapiHandler({local=false, key='', analysisKey='', analysisBudget=1, direct={}, googleTraffic=null, directory, store, budgetStore=null, request=fetch, crawl=crawlCoverage, benchmarkConcurrency=24, onBenchmarkProgress=async()=>{}}={}) {
  const budget=Number.isFinite(analysisBudget)&&analysisBudget>0?Math.min(analysisBudget,25):1;
  const maximumAnalysisAttempts=Math.floor(budget/0.05);
  let busy=false;
  const storage=store||localCollectorStore(directory);let leaseToken;
- let saveChain=Promise.resolve();
- const load=()=>storage.load(),save=state=>{
-  const write=saveChain.then(()=>storage.save(structuredClone(state),leaseToken));
-  saveChain=write.catch(()=>{});return write;
- };
+ const load=()=>storage.load(),save=coalescedSave(state=>storage.save(state,leaseToken));
  async function provider(path,reserve) {let response;try{response=await requestWithReservation(request,'https://www.searchapi.io'+path,{headers:{Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(path.endsWith('/me')?10000:120000),redirect:'error'},reserve);}catch(e){if(/^(OpenAI pilot budget|SearchAPI|Saved scans)/.test(e.message||''))throw e;throw new Error('SearchAPI did not respond. The attempt may have used a credit; check history before retrying.');}if(!response.ok)throw new Error(`SearchAPI returned ${response.status}. ${response.status>=500?'The provider could not complete this request.':'Check your trial access.'} No automatic retry was made.`);return response.json();}
  return async(req,res)=>{
   const send=(code,body)=>{res.statusCode=code;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(body));};
@@ -96,8 +93,8 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
    }
    if(action==='measurementProfile'){let reviewed;try{reviewed=validateMeasurementProfile(body.profile,[business.name,...competitors]);}catch(e){return send(400,{error:e.message});}state.measurementProfiles={...state.measurementProfiles,[business.domain]:reviewed};await save(state);return send(200,result());}
    if(action==='competitors'){try{competitors=validateCompetitors(body.competitors,business.name);}catch(e){return send(400,{error:e.message});}state.competitors={...state.competitors,[business.domain]:competitors};await save(state);return send(200,result());}
-   const reserve=async()=>{await reserveShared('analysis',maximumAnalysisAttempts,'OpenAI pilot budget reached. No more analysis requests will run.');state.analysisAttempts=(state.analysisAttempts||0)+1;await save(state);};
-   const analyze=async(instructions,input,schema)=>{const data=await analyzeJSON({key:analysisKey,instructions,input,schema,reserve,request});state.analysisCost=(state.analysisCost||0)+data.cost;await save(state);return data.result;};
+   const reserve=async()=>{await reserveShared('analysis',maximumAnalysisAttempts,'OpenAI pilot budget reached. No more analysis requests will run.');state.analysisAttempts=(state.analysisAttempts||0)+1;if(!budgetStore)await save(state);};
+   const analyze=async(instructions,input,schema)=>{const data=await analyzeJSON({key:analysisKey,instructions,input,schema,reserve,request});state.analysisCost=(state.analysisCost||0)+data.cost;if(action!=='benchmarkStep')await save(state);return data.result;};
    if(action==='auditEntities'){
     if(!analysisKey)throw Error('OpenAI analysis is not configured.');
     const measured=state.answers.filter(r=>r.domain===business.domain&&r.answer.brandAssessment&&r.answer.discoveryComplete);
@@ -203,14 +200,24 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
    if(action==='benchmarkStep'){
     if(!analysisKey)throw Error('OpenAI analysis is not configured.');
     const plan=state.plans?.[business.domain]||{questions:[]};
-    const batch=nextPromptBatch(plan.questions);
-    if(batch){
+    const batches=BUYER_INTENTS.map(intent=>({intent,count:25-plan.questions.filter(q=>q.intent===intent).length})).filter(batch=>batch.count>0);
+    if(batches.length){
      const excluded=[business.name,business.domain,...(aliases()[business.name]||[]),...competitors];
-     const failure=state.planRepairs?.[business.domain]?.[batch.intent];
-     if(failure?.attempts>=3)throw Error('OpenAI could not prepare distinct questions after three attempts. Saved work is preserved.');
-     const draft=await analyze(`Create exactly ${batch.count} NEW distinct unbranded buyer questions, all with intent "${batch.intent}". Start each question with Which, What are the best, Can you recommend, or How do ... compare. Ask for direct alternatives in the same market as this business, not supporting tools or agencies. Discovery should explore audiences and needs; Comparison should contrast specific capabilities and tradeoffs; Buying decisions should specify adoption constraints and value; Use cases should address concrete real-world tasks. Stay strictly within the requested intent. Vary audiences, experience, budgets, constraints, geography only when supported, and practical jobs. Avoid repeated or paraphrased questions. Never include brand names or domains. Keep questions under 400 characters and topics under 100.`,{business,category:state.reports?.[business.domain]?.category,excludedBrandNames:excluded,priorQuestions:plan.questions.map(q=>q.text),rejectedQuestions:failure?.questions||[],correction:failure?'The last batch was rejected. Produce completely NEW questions, never reuse the excluded text.':''},planExtensionSchema);
-     try{state.plans={...state.plans,[business.domain]:appendPromptBatch(plan,draft,batch,excluded)};}catch(e){state.planRepairs={...state.planRepairs,[business.domain]:{...state.planRepairs?.[business.domain],[batch.intent]:{attempts:(failure?.attempts||0)+1,questions:draft.questions?.map(q=>q.text)||[],error:e.message}}};await save(state);if((failure?.attempts||0)>=2)throw e;return send(200,result());}
-     await save(state);return send(200,result());
+     const drafts=await Promise.allSettled(batches.map(async batch=>{
+      const failure=state.planRepairs?.[business.domain]?.[batch.intent];
+      if(failure?.attempts>=3)throw Error('OpenAI could not prepare distinct questions after three attempts. Saved work is preserved.');
+      return await analyze(`Create exactly ${batch.count} NEW distinct unbranded buyer questions, all with intent "${batch.intent}". Start each question with Which, What are the best, Can you recommend, or How do ... compare. Ask for direct alternatives in the same market as this business, not supporting tools or agencies. Discovery should explore audiences and needs; Comparison should contrast specific capabilities and tradeoffs; Buying decisions should specify adoption constraints and value; Use cases should address concrete real-world tasks. Stay strictly within the requested intent. Vary audiences, experience, budgets, constraints, geography only when supported, and practical jobs. Avoid repeated or paraphrased questions. Never include brand names or domains. Keep questions under 400 characters and topics under 100.`,{business,category:state.reports?.[business.domain]?.category,excludedBrandNames:excluded,priorQuestions:plan.questions.map(q=>q.text),rejectedQuestions:failure?.questions||[],correction:failure?'The last batch was rejected. Produce completely NEW questions, never reuse the excluded text.':''},planExtensionSchema);
+     }));
+     let merged=plan,fatal;
+     for(let i=0;i<batches.length;i++){
+      const batch=batches[i],outcome=drafts[i];
+      if(outcome.status==='rejected'){fatal=outcome.reason;continue;}
+      const draft=outcome.value,failure=state.planRepairs?.[business.domain]?.[batch.intent];
+      try{merged=appendPromptBatch(merged,draft,batch,excluded);}
+      catch(e){state.planRepairs={...state.planRepairs,[business.domain]:{...state.planRepairs?.[business.domain],[batch.intent]:{attempts:(failure?.attempts||0)+1,questions:draft.questions?.map(q=>q.text)||[],error:e.message}}};if((failure?.attempts||0)>=2)fatal=e;}
+     }
+     state.plans={...state.plans,[business.domain]:merged};
+     await save(state);if(fatal)throw fatal;return send(200,result());
     }
     const current=state.benchmarks?.[business.domain];
     if(!current||current.total!==PROMPT_TARGET){
@@ -261,7 +268,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
      benchmark.status='running';benchmark.error='';await save(state);
      const findAnswer=q=>state.answers.find(r=>r.domain===business.domain&&r.benchmarkId===benchmark.startedAt&&r.promptId===q.id);
      try{
-      await runBenchmarkBatch({questions:selected,completed:benchmark.completed,findAnswer,
+      await runBenchmarkBatch({questions:selected,completed:benchmark.completed,findAnswer,concurrency:benchmarkConcurrency,
        collect:async q=>{
         const collected=await collectOpenAIWeb({key:analysisKey,business,prompt:q.text,topic:q.topic,request,reserve});
         state.answers.push({domain:business.domain,benchmarkId:benchmark.startedAt,promptId:q.id,collectionEngine:'openai-web',answer:{...collected.answer,topic:q.topic}});
@@ -272,7 +279,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
         const assessment=await analyze('Assess each supplied brand using its aliases. Distinguish brands from common words and similarly named businesses. Copy verbatim evidence for every mention, sentiment and explicit numbered recommendation rank. Also discover other market alternatives explicitly named in this answer. Return null for unsupported rankings and Not assessed for uncertain sentiment.',{brands:names,aliases:aliases(),answer:saved.answer.answer.slice(0,20000)},assessmentSchema);
         saved.answer={...applyAssessment(saved.answer,assessment,names,business.name,aliases()),promptId:q.id,measurementProfile:profile};await save(state);
        },
-       finish:async q=>{if(!benchmark.completed.includes(q.id))benchmark.completed.push(q.id);await save(state);}
+       finish:async q=>{if(!benchmark.completed.includes(q.id))benchmark.completed.push(q.id);await save(state);await onBenchmarkProgress(benchmark.completed.length,target);}
       });
       if(benchmark.completed.length===target){benchmark.status='complete';benchmark.finishedAt=new Date().toISOString();}
      }catch(e){benchmark.status='partial';benchmark.error=e.message;}
