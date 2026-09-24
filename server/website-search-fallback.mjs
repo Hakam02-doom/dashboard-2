@@ -12,7 +12,7 @@ export async function searchWebsiteProfile(input,{client,key,request=fetch,now=n
  if(account.subscription||account.account?.monthly_allowance!==0||!(account.account?.remaining_credits>0))throw Error('Search snippet fallback needs free trial credits.');
  const budget=cloudBudgetStore(client),usage=await budget.usage();
  if(usage.search>=100||!(await budget.reserve('search',100)))throw Error('Shared search trial limit reached.');
- const query=`site:${domain} ${domain.split('.')[0]}`;
+ const query=`${domain.split('.')[0].replace(/[-_]/g,' ')} ${domain} official website`;
  const response=await request('https://www.searchapi.io/api/v1/search?'+new URLSearchParams({engine:'google',q:query}),{headers,signal:AbortSignal.timeout(20000),redirect:'error'});
  if(!response.ok)throw Error('Search snippet fallback did not return usable results.');
  const data=await response.json();
@@ -20,9 +20,11 @@ export async function searchWebsiteProfile(input,{client,key,request=fetch,now=n
   try{const host=websiteUrl(row.link).hostname.replace(/^www\./,'');return host===domain||host.endsWith('.'+domain);}catch{return false;}
  }).slice(0,5);
  if(!rows.length)throw Error('No indexed pages were found for this website.');
- const first=rows[0],clean=value=>String(value||'').replace(/\s+/g,' ').trim();
- const name=clean(first.source||first.title?.split(/\s[|–—]\s/)[0]||domain).slice(0,100);
+ const first=rows.find(row=>{try{return websiteUrl(row.link).pathname==='/';}catch{return false;}})||rows[0];
+ const clean=value=>String(value||'').replace(/\s+/g,' ').trim();
+ const source=clean(first.source),titleName=clean(first.title?.split(/\s[|–—]\s/)[0]).replace(/\b(?:official website|homepage)\b/ig,'').trim();
+ const name=(source&&!source.toLowerCase().includes(domain)?source:titleName||domain.split('.')[0]).slice(0,100);
  const description=clean(first.snippet).slice(0,600);
  if(!name||!description)throw Error('Indexed results did not include enough business details.');
- return {domain,url:url.href,name,description,headings:[],schemaTypes:[],title:clean(first.title).slice(0,200),analyzedAt:now.toISOString(),source:'search-results',wordCount:0,language:'',pages:rows.map(row=>({url:websiteUrl(row.link).href,title:clean(row.title).slice(0,200),description:clean(row.snippet).slice(0,600),headings:[]})),scope:`${rows.length} indexed search snippets reviewed; the website blocked automated reading. No page content was read.`};
+ return {domain,url:url.href,name,description,headings:[],schemaTypes:[],title:clean(first.title).slice(0,200),analyzedAt:now.toISOString(),source:'search-results',searchVersion:2,wordCount:0,language:'',pages:rows.map(row=>({url:websiteUrl(row.link).href,title:clean(row.title).slice(0,200),description:clean(row.snippet).slice(0,600),headings:[]})),scope:`${rows.length} indexed search snippets reviewed; the website blocked automated reading. No page content was read.`};
 }

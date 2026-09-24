@@ -24,7 +24,7 @@ export function createWebsiteApiHandler({client=serverClient(process.env),analyz
   try{
    lease=await store.acquire();if(!lease)return send(res,429,{error:'Another analysis is running. Try again shortly.'});
    const state=await store.load(),day=new Date().toISOString().slice(0,10),cached=state.websiteProfiles?.[url];
-   if(cached&&Date.parse(cached.analyzedAt)>Date.now()-86400000)return send(res,200,{profile:cached});
+   if(cached&&(cached.source!=='search-results'||cached.searchVersion===2)&&Date.parse(cached.analyzedAt)>Date.now()-86400000)return send(res,200,{profile:cached});
    state.websiteReads ||= {};if((state.websiteReads[day]||0)>=30)return send(res,429,{error:'Daily website-read limit reached.'});
    state.websiteReads[day]=(state.websiteReads[day]||0)+1;await store.save(state,lease);
    let profile;
