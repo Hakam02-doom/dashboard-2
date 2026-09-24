@@ -8,6 +8,9 @@
 .aiv-auth-form label,.aiv-cloud-account label{display:grid;gap:8px;font-size:14px;font-weight:500}
 .aiv-auth-form input,.aiv-cloud-account input{box-sizing:border-box;width:100%;min-width:0;padding:12px 14px;border:1px solid var(--d2-line);border-radius:12px;background:var(--d2-surface-muted);color:var(--d2-text);font:inherit}
 .aiv-auth-form .cs-button{justify-content:center;min-height:44px;font:inherit;font-size:14px}.aiv-auth-form small{font-size:12px;line-height:1.5;color:var(--d2-muted)}
+.aiv-auth-form .aiv-google-button{display:flex;align-items:center;width:100%;gap:10px;border:1px solid var(--d2-line);background:var(--d2-surface-muted);color:var(--d2-text)}
+.aiv-google-mark{display:grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--d2-surface);font-weight:700;color:var(--d2-purple-ink)}
+.aiv-auth-divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--d2-muted);font-size:12px}.aiv-auth-divider::before,.aiv-auth-divider::after{content:"";height:1px;flex:1;background:var(--d2-line)}
 .aiv-auth-form .aiv-auth-error,.aiv-cloud-account .aiv-auth-error,.aiv-auth-form .aiv-auth-message,.aiv-cloud-account .aiv-auth-message{margin:20px 0 0;padding:12px 14px;border:1px solid var(--d2-line);border-radius:12px;background:var(--d2-surface-muted);color:var(--d2-text);font-size:14px;line-height:1.6}
 .aiv-auth-dialog button:focus-visible,.aiv-auth-dialog input:focus-visible{outline:2px solid var(--d2-purple-ink);outline-offset:3px}
 @media(max-width:480px){.aiv-auth-dialog{padding:24px}.aiv-auth-form h3{font-size:22px}}
