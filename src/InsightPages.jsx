@@ -21,6 +21,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { BrandLogo } from "./BrandLogo";
+import { MentionsPage } from "./MentionsPage";
 import { resolveBrandDomain } from "./brand-domains";
 import { reportMetrics } from "./ai-insights-data";
 import {
@@ -494,209 +495,6 @@ function AnswerList({ rows, business, brand, onAnswer }) {
       </Table>
       {!list.length && <Empty />}
     </Card>
-  );
-}
-function MentionPage({
-  rows,
-  business,
-  brand,
-  cadence,
-  annotations,
-  onDetail,
-  onAnswer,
-}) {
-  const ownRows = brandRows(rows, brand, business.name),
-    [mode, setMode] = useState(0),
-    [merge, setMerge] = useState(false);
-  const series = (field) => ({
-    name: field === "mentioned" ? "Mentions" : "Citations",
-    points: bucketRows(ownRows, cadence).map(([date, rs]) => ({
-      date,
-      value:
-        field === "cited" && brand !== business.name
-          ? null
-          : rs.filter((r) => r[field]).length,
-    })),
-  });
-  const stages = ["Learn", "Consider", "Purchase"];
-  const names = reportMetrics(rows, business.name).map((b) => b.name);
-  return (
-    <>
-      <div className="ip-grid">
-        <Card
-          title="Mentions"
-          icon={Eye}
-          note="Answers mentioning the selected brand"
-          className={merge ? "ip-wide" : ""}
-          actions={<Switch value={mode} onChange={setMode} />}
-          footer="Only dates with collected observations are plotted"
-        >
-          <div className="ip-stat">
-            <span>Total mentions</span>
-            <strong>{ownRows.filter((r) => r.mentioned).length}</strong>
-          </div>
-          <Chart
-            series={
-              merge
-                ? [series("mentioned"), series("cited")]
-                : [series("mentioned")]
-            }
-            mode={mode}
-          />
-          {merge && (
-            <button onClick={() => setMerge(false)}>Separate citations</button>
-          )}
-        </Card>
-        {!merge && (
-          <Card
-            title="Citations"
-            icon={Link2}
-            note="Answers linking to your website"
-            actions={<Switch value={mode} onChange={setMode} />}
-            footer={
-              <button onClick={() => setMerge(true)}>
-                Merge with mentions
-              </button>
-            }
-          >
-            <div className="ip-stat">
-              <span>Total citations</span>
-              <strong>
-                {brand === business.name
-                  ? ownRows.filter((r) => r.cited).length
-                  : "—"}
-              </strong>
-            </div>
-            <Chart series={[series("cited")]} mode={mode} />
-          </Card>
-        )}
-        <Card
-          title="Decision Journey"
-          icon={Filter}
-          note="Mention rate by buyer stage"
-          footer="Stages are classified from your actual prompts"
-        >
-          <div className="ip-funnel">
-            {stages.map((stage, i) => {
-              const rs = ownRows.filter(
-                  (r) => annotations[r.id]?.stage === stage,
-                ),
-                rate = rs.length
-                  ? (rs.filter((r) => r.mentioned).length / rs.length) * 100
-                  : null;
-              return (
-                <button
-                  key={stage}
-                  onClick={() =>
-                    onDetail({
-                      title: stage + " · buyer journey",
-                      content: (
-                        <AnswerList
-                          rows={rs}
-                          business={business}
-                          brand={brand}
-                          onAnswer={onAnswer}
-                        />
-                      ),
-                    })
-                  }
-                >
-                  <span
-                    style={{ width: `${100 - i * 15}%` }}
-                    className={"ip-stage stage-" + i}
-                  >
-                    {pct(rate)}
-                  </span>
-                  <span>
-                    <strong>
-                      {stage} <small>{["TOFU", "MOFU", "BOFU"][i]}</small>
-                    </strong>
-                    <small>
-                      {
-                        [
-                          "Explore the category",
-                          "Evaluate options",
-                          "Choose a product",
-                        ][i]
-                      }
-                    </small>
-                    <small>{rs.length} classified answers</small>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          <p className="ip-note">
-            {
-              ownRows.filter((r) => !stages.includes(annotations[r.id]?.stage))
-                .length
-            }{" "}
-            answers have no classified stage.
-          </p>
-        </Card>
-        <Card
-          title="Position Distribution"
-          icon={Hash}
-          note="Explicit brand rankings in answers"
-          footer="Each row uses that brand’s ranked answers as its denominator"
-        >
-          <Table headers={["Brand", "#1", "#2", "#3", "#4", "#5", "#5+"]}>
-            {names.map((name) => {
-              const ranked = brandRows(rows, name, business.name).filter(
-                (r) => Number.isFinite(r.position) && r.position > 0,
-              );
-              return (
-                <tr key={name}>
-                  <td>
-                    <Brand name={name} business={business} rows={rows} />
-                  </td>
-                  {[1, 2, 3, 4, 5, 6].map((n) => {
-                    const selected = ranked.filter((r) =>
-                        n === 6 ? r.position > 5 : r.position === n,
-                      ),
-                      v = ranked.length
-                        ? (selected.length / ranked.length) * 100
-                        : null;
-                    return (
-                      <td key={n}>
-                        <button
-                          className="ip-heat"
-                          style={{
-                            "--intensity":
-                              v === null ? 0 : Math.max(0.08, v / 100),
-                          }}
-                          onClick={() =>
-                            onDetail({
-                              title: `${name} · position ${n === 6 ? "5+" : n}`,
-                              content: (
-                                <AnswerList
-                                  rows={selected}
-                                  business={business}
-                                  brand={name}
-                                  onAnswer={onAnswer}
-                                />
-                              ),
-                            })
-                          }
-                        >
-                          {pct(v)}
-                        </button>
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })}
-          </Table>
-        </Card>
-      </div>
-      <AnswerList
-        rows={ownRows}
-        business={business}
-        brand={brand}
-        onAnswer={onAnswer}
-      />
-    </>
   );
 }
 function SentimentPage({
@@ -1992,6 +1790,7 @@ export function InsightPages({
     business,
     brand,
     cadence,
+    plan,
     annotations,
     reviews,
     library,
@@ -2015,14 +1814,14 @@ export function InsightPages({
     },
   };
   return (
-    <div className="ip-pages">
+    <div className={tab === 1 ? "mp-root" : "ip-pages"}>
       {notice && (
         <p className="ip-notice" role="status">
           {notice}
         </p>
       )}
       {tab === 1 ? (
-        <MentionPage {...shared} />
+        <MentionsPage {...shared} />
       ) : tab === 2 ? (
         <SentimentPage {...shared} />
       ) : tab === 3 ? (

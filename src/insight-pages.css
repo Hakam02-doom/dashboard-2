@@ -5,8 +5,6 @@
     var(--ip-green) 22%,
     var(--d2-surface, #ffffff)
   );
-  --ip-amber-soft: color-mix(in srgb, #c5a15a 22%, var(--d2-surface, #ffffff));
-  --ip-red-soft: color-mix(in srgb, #c68197 20%, var(--d2-surface, #ffffff));
   display: grid;
   gap: 22px;
   color: var(--d2-text, #292d38);
@@ -325,49 +323,6 @@
   font-size: 11px;
   color: var(--d2-muted, #697386);
   margin: 2px;
-}
-.ip-funnel {
-  display: grid;
-  gap: 14px;
-  padding: 14px 0;
-}
-.ip-funnel > button {
-  border: 0;
-  background: none;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  text-align: left;
-  padding: 0;
-}
-.ip-stage {
-  height: 66px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  clip-path: polygon(0 0, 100% 0, 92% 100%, 8% 100%);
-  justify-self: center;
-  background: var(--d2-purple-soft);
-  font-size: 19px;
-  font-weight: 500;
-}
-.ip-stage.stage-1 {
-  background: var(--ip-red-soft);
-}
-.ip-stage.stage-2 {
-  background: var(--ip-amber-soft);
-}
-.ip-funnel strong,
-.ip-funnel small {
-  display: block;
-}
-.ip-funnel small {
-  font-size: 11px;
-  color: var(--d2-muted, #697386);
-  font-weight: 400;
-}
-.ip-funnel strong small {
-  display: inline;
 }
 .ip-perception {
   display: grid;
@@ -806,9 +761,6 @@
   }
   .ip-fanout-heading > div {
     gap: 32px;
-  }
-  .ip-funnel > button {
-    gap: 10px;
   }
   .ip-card {
     border-radius: 16px;
