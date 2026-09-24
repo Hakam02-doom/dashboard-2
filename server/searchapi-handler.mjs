@@ -12,7 +12,8 @@ import {localCollectorStore} from './collector-store.mjs';
 import {crawlCoverage,coverageSchema,verifyCoverage,coveragePage} from './page-coverage.mjs';
 import {validateSchedule,enqueueDue} from './collection-schedule.mjs';
 import { namedEvidence } from './evidence-normalization.mjs';
-import {assessmentAliases,needsIdentityReview} from './brand-identity.mjs';
+import {normalizeObservedIdentity} from './observed-identity.mjs';
+import {canonicalPageTitleName,assessmentAliases,needsIdentityReview} from './brand-identity.mjs';
 import {collectOpenAIWeb} from './openai-web-collector.mjs';
 import {auditCandidates,entityAuditSchema,verifyEntityAudit,pruneNonMarketBrands} from './brand-entities.mjs';
 import { validateMeasurementProfile } from './measurement-profile.mjs';
@@ -50,7 +51,9 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
     if(busy)return send(429,{code:'ANALYSIS_BUSY',retryAfter:5,error:'Another analysis is finishing. We’ll continue automatically.'});
     busy=true;ownsLock=true;leaseToken=await storage.acquire();if(!leaseToken)return send(429,{code:'ANALYSIS_BUSY',retryAfter:5,error:'Another analysis is finishing. We’ll continue automatically.'});
    }
+   business={...business,name:canonicalPageTitleName(business.name,business.domain)};
    const state=await load();
+   state.answers=state.answers.map(row=>row.domain===business.domain?{...row,answer:normalizeObservedIdentity(row.answer,business)}:row);
    const shared=budgetStore?await budgetStore.usage():{search:state.attempts||0,analysis:state.analysisAttempts||0,direct:state.directAttempts||0};
    const reserveShared=async(kind,limit,message)=>{if(shared[kind]>=limit||budgetStore&&!(await budgetStore.reserve(kind,limit)))throw Error(message);shared[kind]++;};
    if(rollbackOnboarding(state)&&action!=='list')await save(state);

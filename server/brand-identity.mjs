@@ -26,8 +26,15 @@ export function regionalBrandAlias(name, domain) {
  return '';
 }
 
+export function canonicalPageTitleName(name, domain) {
+ const prefix=String(name||'').split(/\s+[|–—-]\s+/)[0].trim();
+ const label=domainBrandLabel(domain);
+ if(prefix!==name&&label.length>=3&&compact(prefix)===compact(label))return prefix;
+ return name;
+}
+
 export function canonicalWebsiteName(name, domain) {
- return regionalBrandAlias(name, domain) || name;
+ return regionalBrandAlias(name,domain)||canonicalPageTitleName(name,domain);
 }
 
 export function assessmentAliases(business, profile = null, competitors = []) {

@@ -31,7 +31,7 @@ export function brandRankings(rows, businessName) {
   const measured = index === 0 ? rows : rows.filter(r => r.discoveryComplete || (r.trackedCompetitors || r.competitors || []).includes(name));
   return { name, own: index === 0, sampleSize: measured.length, mentions: measured.filter(r => index === 0 ? r.mentioned : (r.competitors || []).includes(name)).length };
  });
- const comparable = rows.length && rows.every(r=>r.comparisonAssessed!==false);
+ const comparable = rows.length && rows.every(r=>r.discoveryComplete===true||r.comparisonAssessed!==false);
  const totalMentions = results.reduce((sum, r) => sum + r.mentions, 0);
  return results.map(r => ({ ...r, visibility: r.sampleSize ? r.mentions / r.sampleSize * 100 : null, sov: comparable && totalMentions ? r.mentions / totalMentions * 100 : null })).sort((a,b) => b.mentions - a.mentions);
 }
