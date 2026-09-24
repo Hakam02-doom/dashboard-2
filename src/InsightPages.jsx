@@ -1675,10 +1675,10 @@ function LocationPage({ rows, prior, business, selectedLocation, onSelectLocatio
                     }
                     className={samePlace(name, activeLocation) ? region ? "is-selected" : "is-selected is-unmeasured" : region ? "is-tracked" : ""}
                     onClick={() => { setWorldView(false); onSelectLocation(name); }}
-                    tabIndex={0}
-                    role="button"
+                    tabIndex={region ? 0 : undefined}
+                    role={region ? "button" : undefined}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setWorldView(false); onSelectLocation(name); }
+                      if (region && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setWorldView(false); onSelectLocation(name); }
                     }}
                   >
                     <title>{name}{region ? ` · ${region.rows.length} measured answers` : " · No regional observations"}</title>
