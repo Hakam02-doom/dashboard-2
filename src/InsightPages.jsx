@@ -45,6 +45,21 @@ const colors = [
   "#7cacaa",
 ];
 const num = (v) => (Number.isFinite(v) ? v.toFixed(1) : "—");
+function LinkedAnswer({text}) {
+  const pieces=[], pattern=/\[([^\]]{1,220})\]\((https?:\/\/[^\s)]+)\)/g;
+  let end=0, match;
+  while ((match=pattern.exec(text))) {
+    if(match.index>end)pieces.push(text.slice(end,match.index));
+    try {
+      const url=new URL(match[2]);
+      if(!url.username&&!url.password)pieces.push(<a key={match.index} href={url.href} target="_blank" rel="noopener noreferrer">{match[1]} ↗</a>);
+      else pieces.push(match[0]);
+    } catch { pieces.push(match[0]); }
+    end=pattern.lastIndex;
+  }
+  if(end<text.length)pieces.push(text.slice(end));
+  return <>{pieces}</>;
+}
 function exportRows(name, rows) {
   const url = URL.createObjectURL(
     new Blob([JSON.stringify(rows, null, 2)], { type: "application/json" }),
@@ -1944,7 +1959,7 @@ export function InsightPages({
           <p className="ip-note">
             {r.engine} · {new Date(r.at).toLocaleString()} · {r.method}
           </p>
-          <div className="ip-answer-text">{r.answer}</div>
+          <div className="ip-answer-text"><LinkedAnswer text={r.answer}/></div>
           <h3>Cited sources</h3>
           {unique(r.sources || [])
             .filter(domainOf)

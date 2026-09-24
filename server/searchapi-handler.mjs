@@ -9,8 +9,9 @@ import {crawlCoverage,coverageSchema,verifyCoverage,coveragePage} from './page-c
 import {validateSchedule,enqueueDue} from './collection-schedule.mjs';
 import { namedEvidence } from './evidence-normalization.mjs';
 import {assessmentAliases,needsIdentityReview} from './brand-identity.mjs';
+import {collectOpenAIWeb} from './openai-web-collector.mjs';
 import { validateMeasurementProfile } from './measurement-profile.mjs';
-import { analyzeJSON, discoverySchema, assessmentSchema, applyAssessment, planSchema, validatePlan } from './ai-analysis.mjs';
+import { analyzeJSON, discoverySchema, assessmentSchema, applyAssessment, planSchema, validatePlan, completeBenchmarkPlan } from './ai-analysis.mjs';
 import { initialCompetitors, validateCompetitors, compareAnswer } from './competitor-analysis.mjs';
 const origins = ['http://127.0.0.1:5174', 'http://localhost:5174'];
 export function normalizeAnswer(data, business, prompt, engine='chatgpt') {
@@ -60,7 +61,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
    const profile=state.measurementProfiles?.[business.domain]||null;
    const aliases=()=>assessmentAliases(business,profile,competitors);
    const pendingIdentity=()=>state.answers.filter(r=>r.domain===business.domain&&needsIdentityReview(r.answer,business,aliases()));
-   const result=()=>({directCollectors:directStatus(direct,{...state,directAttempts:shared.direct}),googleTrafficConfigured:!!googleTraffic?.configured,googleServiceAccount:googleTraffic?.serviceAccount||null,googleProperties:state.googleProperties?.[business.domain]||{ga4PropertyId:'',gscSiteUrl:''},storage:storage.kind,sourceMetadata:state.sourceMetadata?.[business.domain]||{},insightAnnotations:state.insightAnnotations?.[business.domain]||{},factReviews:state.factReviews?.[business.domain]||{},opportunityActions:state.opportunityActions?.[business.domain]||{},library:state.libraries?.[business.domain]||null,coverage:state.coverage?.[business.domain]||{},crawl:state.crawls?.[business.domain]?{at:state.crawls[business.domain].at,scope:state.crawls[business.domain].scope}:null,schedule:state.schedules?.[business.domain]||null,jobs:(state.jobs||[]).filter(j=>j.business.domain===business.domain).slice(-50),measurementProfile:state.measurementProfiles?.[business.domain]||null,analysisBudget:{limit:budget,estimatedCost:state.analysisCost||0,reserved:shared.analysis*0.05},plan:state.plans?.[business.domain]||null,report:state.reports?.[business.domain]||null,analysisConfigured:!!analysisKey,competitors,pendingIdentityCount:pendingIdentity().length,answers:state.answers.filter(r=>r.domain===business.domain&&!needsIdentityReview(r.answer,business,aliases())).map(r=>({...r.answer.brandAssessment?refreshPositions(r.answer,business.name):compareAnswer(r.answer,business,competitors,aliases()),sourceMetadata:state.sourceMetadata?.[business.domain]||{}})),configured:!!key,attemptsRemaining:Math.max(0,100-shared.search)});
+   const result=()=>({directCollectors:directStatus(direct,{...state,directAttempts:shared.direct}),googleTrafficConfigured:!!googleTraffic?.configured,googleServiceAccount:googleTraffic?.serviceAccount||null,googleProperties:state.googleProperties?.[business.domain]||{ga4PropertyId:'',gscSiteUrl:''},storage:storage.kind,sourceMetadata:state.sourceMetadata?.[business.domain]||{},insightAnnotations:state.insightAnnotations?.[business.domain]||{},factReviews:state.factReviews?.[business.domain]||{},opportunityActions:state.opportunityActions?.[business.domain]||{},library:state.libraries?.[business.domain]||null,coverage:state.coverage?.[business.domain]||{},crawl:state.crawls?.[business.domain]?{at:state.crawls[business.domain].at,scope:state.crawls[business.domain].scope}:null,schedule:state.schedules?.[business.domain]||null,jobs:(state.jobs||[]).filter(j=>j.business.domain===business.domain).slice(-50),measurementProfile:state.measurementProfiles?.[business.domain]||null,analysisBudget:{limit:budget,estimatedCost:state.analysisCost||0,reserved:shared.analysis*0.05},plan:state.plans?.[business.domain]||null,report:state.reports?.[business.domain]||null,benchmark:state.benchmarks?.[business.domain]||null,analysisConfigured:!!analysisKey,competitors,pendingIdentityCount:pendingIdentity().length,answers:state.answers.filter(r=>r.domain===business.domain&&!needsIdentityReview(r.answer,business,aliases())).map(r=>({...r.answer.brandAssessment?refreshPositions(r.answer,business.name):compareAnswer(r.answer,business,competitors,aliases()),benchmarkId:r.benchmarkId||null,sourceMetadata:state.sourceMetadata?.[business.domain]||{}})),configured:!!key,attemptsRemaining:Math.max(0,100-shared.search)});
    if(action==='list')return send(200,result());
    if(action==='googleProperties'){let properties;try{properties=validateGoogleProperties(body.properties,business.domain);}catch(e){return send(400,{error:e.message});}state.googleProperties={...state.googleProperties,[business.domain]:properties};await save(state);return send(200,result());}
    if(action==='trafficReport'){
@@ -171,6 +172,48 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
     const report=state.reports?.[business.domain];
     const plan=validatePlan(await analyze('Prepare exactly 24 distinct unbranded buyer questions: exactly 6 each for Discovery, Comparison, Buying decisions, and Use cases. Questions must ask for concrete product or vendor recommendations or comparisons, not generic educational advice. Never include supplied brand names or domains. Use only business profile and research to infer the audience and products. Do not make up business facts. Keep each question under 400 characters and each topic under 100 characters.',{business,excludedBrandNames:[business.name,business.domain,...competitors],category:report?.category,research:report?.discovery?.answer?.slice(0,12000)},planSchema),[business.name,business.domain,...competitors]);
     state.plans={...state.plans,[business.domain]:{...plan,createdAt:new Date().toISOString(),questions:plan.questions.map((q,i)=>({...q,id:`prompt-${i+1}`}))}};await save(state);return send(200,result());
+   }
+   if(action==='benchmarkNext'){
+    if(!analysisKey)throw Error('OpenAI analysis is not configured.');
+    if(!state.plans?.[business.domain]){
+     const report=state.reports?.[business.domain];
+     const excluded=[business.name,business.domain,...(aliases()[business.name]||[]),...competitors];
+     const context={business,excludedBrandNames:excluded,category:report?.category,research:report?.discovery?.answer?.slice(0,12000)};
+     let draft=await analyze('Prepare exactly 24 distinct unbranded buyer questions: exactly 6 each for Discovery, Comparison, Buying decisions, and Use cases. Ask for concrete vendor or product options. The questions should span different needs, budgets, customer types and jobs-to-be-done so the benchmark does not repeat the same answer. Never include brand names or domains. Use only the supplied business profile and research as context. Do not invent business facts.',context,planSchema);
+     let planned;
+     try{planned=validatePlan(draft,excluded);}
+     catch{
+      try{draft=await analyze('Repair this question plan. Return exactly 24 distinct unbranded buyer questions, exactly 6 in each intent. Replace any duplicate or any question containing an excluded brand name, including the business name or a close alias. Keep category-specific, practical vendor or product choices. Do not change supplied business facts.',{...context,draft},planSchema);planned=validatePlan(draft,excluded);}
+      catch{planned=completeBenchmarkPlan(draft,excluded,report?.category);}
+     }
+     state.plans={...state.plans,[business.domain]:{...planned,createdAt:new Date().toISOString(),questions:planned.questions.map((q,i)=>({...q,id:`prompt-${i+1}`}))}};await save(state);
+    }
+    const selected=['Discovery','Comparison','Buying decisions','Use cases'].flatMap(intent=>state.plans[business.domain].questions.filter(q=>q.intent===intent).slice(0,5));
+    if(selected.length!==20)throw Error('The benchmark needs five questions for each buyer intent.');
+    const benchmark=state.benchmarks?.[business.domain]||{status:'running',engine:'OpenAI Web Search',total:20,completed:[],startedAt:new Date().toISOString(),error:''};
+    state.benchmarks={...state.benchmarks,[business.domain]:benchmark};
+    if(benchmark.status==='complete')return send(200,result());
+    const q=selected.find(item=>!benchmark.completed.includes(item.id));
+    if(!q){benchmark.status='complete';benchmark.finishedAt=new Date().toISOString();await save(state);return send(200,result());}
+    benchmark.status='running';benchmark.error='';await save(state);
+    try{
+     let saved=state.answers.find(r=>r.domain===business.domain&&r.benchmarkId===benchmark.startedAt&&r.promptId===q.id);
+     if(!saved){
+      if(shared.analysis+2>maximumAnalysisAttempts)throw Error('OpenAI pilot budget reached. No benchmark question was started.');
+      const collected=await collectOpenAIWeb({key:analysisKey,business,prompt:q.text,topic:q.topic,request,reserve});
+      saved={domain:business.domain,benchmarkId:benchmark.startedAt,promptId:q.id,collectionEngine:'openai-web',answer:{...collected.answer,topic:q.topic}};
+      state.answers.push(saved);state.analysisCost=(state.analysisCost||0)+collected.cost;await save(state);
+     }
+     if(!saved.answer.brandAssessment){
+      const names=[business.name,...competitors];
+      const assessment=await analyze('Assess each supplied brand using its aliases. Distinguish brands from common words and similarly named businesses. Copy verbatim evidence for every mention, sentiment and explicit numbered recommendation rank. Also discover other market alternatives explicitly named in this answer. Return null for unsupported rankings and Not assessed for uncertain sentiment.',{brands:names,aliases:aliases(),answer:saved.answer.answer.slice(0,20000)},assessmentSchema);
+      saved.answer={...applyAssessment(saved.answer,assessment,names,business.name,aliases()),promptId:q.id,measurementProfile:profile};await save(state);
+     }
+     benchmark.completed.push(q.id);
+     if(benchmark.completed.length===20){benchmark.status='complete';benchmark.finishedAt=new Date().toISOString();}
+     await save(state);
+    }catch(e){benchmark.status='partial';benchmark.error=e.message;await save(state);}
+    return send(200,result());
    }
    if(action==='collectPrompt'){
     const collectionEngine=body.engine||'chatgpt';

@@ -1,6 +1,7 @@
 import {ambiguousBrandName} from './evidence-normalization.mjs';
 const compact = value => String(value || '').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 const regionalSuffixes = new Set(['in', 'india', 'uk', 'unitedkingdom', 'us', 'usa', 'unitedstates', 'au', 'australia', 'ca', 'canada', 'de', 'germany', 'fr', 'france', 'jp', 'japan', 'sg', 'singapore', 'nz', 'newzealand', 'global', 'official']);
+const legalSuffixes = new Set(['limited','ltd','inc','incorporated','llc','corp','corporation','company']);
 const ambiguousLabels = new Set(['app', 'get', 'my', 'the', 'web', 'www', 'shop', 'store', 'online']);
 
 export function domainBrandLabel(domain) {
@@ -16,9 +17,13 @@ export function regionalBrandAlias(name, domain) {
  const label = domainBrandLabel(domain);
  if (label.length < 3 || ambiguousLabels.has(label)) return '';
  const words = String(name || '').trim().split(/\s+/);
- if (words.length < 2 || compact(words[0]) !== compact(label)) return '';
- const suffix = compact(words.slice(1).join(' '));
- return regionalSuffixes.has(suffix) ? words[0] : '';
+ if (words.length < 2) return '';
+ for(let count=1;count<=Math.min(2,words.length-1);count++){
+  const suffix=compact(words.slice(-count).join(' '));
+  const base=words.slice(0,-count).join(' ');
+  if((regionalSuffixes.has(suffix)||legalSuffixes.has(suffix))&&compact(base)===compact(label))return base;
+ }
+ return '';
 }
 
 export function canonicalWebsiteName(name, domain) {

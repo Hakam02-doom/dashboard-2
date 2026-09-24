@@ -28,7 +28,7 @@ export function brandRankings(rows, businessName) {
  // Requiring every historical answer to cover the union of all later lists can
  // erase the entire report when a business changes its comparison set.
  const results = names.map((name, index) => {
-  const measured = index === 0 ? rows : rows.filter(r => (r.trackedCompetitors || r.competitors || []).includes(name));
+  const measured = index === 0 ? rows : rows.filter(r => r.discoveryComplete || (r.trackedCompetitors || r.competitors || []).includes(name));
   return { name, own: index === 0, sampleSize: measured.length, mentions: measured.filter(r => index === 0 ? r.mentioned : (r.competitors || []).includes(name)).length };
  });
  const comparable = rows.length && rows.every(r=>r.comparisonAssessed!==false);
