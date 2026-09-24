@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Readable} from 'node:stream';
-import {journaledRequest,createJobsWorker,publicJob} from '../server/analysis-jobs.mjs';
+import {journaledRequest,createJobsWorker,publicJob,runAnalysisStep,canUseWebsiteFallback} from '../server/analysis-jobs.mjs';
 import {followAnalysisJob} from '../src/analysis-jobs-client.mjs';
 import {searchapiHandler} from '../server/searchapi-handler.mjs';
 function journalClient(){const rows=new Map();return {rows,from:()=>({insert:async row=>{if(rows.has(row.fingerprint))return {error:{code:'23505'}};rows.set(row.fingerprint,row);return {};},select:()=>({eq:()=>({eq:(_k,key)=>({single:async()=>({data:rows.get(key)})})})}),update:value=>({eq:()=>({eq:async(_k,key)=>{Object.assign(rows.get(key),value);return {};}})})})};}
@@ -85,4 +85,21 @@ test('OpenAI web collection replays without a second reservation after a worker 
  const options={key:'fake',business:{domain:'example.com'},prompt:'Which options are best?',request,reserve:async()=>{charges++;}};
  await collectOpenAIWeb(options);await collectOpenAIWeb({...options,reserve:async()=>{throw Error('Budget exhausted');}});
  assert.equal(network,1);assert.equal(charges,1);
+});
+
+test('oversized public pages use indexed evidence and release their workspace lease',async()=>{
+ const calls=[];const profile={domain:'example.com',name:'Example',url:'https://example.com',description:'Verified search snippet'};
+ const client={rpc:async(name)=>{calls.push(name);return {data:name==='ai_workspace_lock'?'lock':name==='ai_workspace_read'?{activeRunId:'job'}:true};},from:()=>({upsert:async row=>{assert.equal(row.profile,profile);return {};}})};
+ const result=await runAnalysisStep({id:'job',owner_id:'owner',url:profile.url,target:40},{client,env:{},analyze:async()=>{throw Error('This page is too large. Try a simpler public page.');},fallback:async url=>{assert.equal(url,profile.url);return profile;}});
+ assert.equal(result.profile,profile);assert.equal(result.status,'queued');assert.equal(calls.at(-1),'ai_workspace_unlock');
+});
+test('website fallback never bypasses unsafe addresses or invalid website validation',()=>{
+ for(const message of ['This address is not a public website.','Use a public HTTPS website with no login details or custom port.','Enter a valid website','That link is not a web page.'])assert.equal(canUseWebsiteFallback(Error(message)),false);
+ for(const message of ['This page is too large.','The website returned HTTP 403.','The website returned HTTP 503.','The website took too long to respond.'])assert.equal(canUseWebsiteFallback(Error(message)),true);
+});
+test('40-question runs open early results only after four measured answers',async()=>{
+ const {hasEarlyResults}=await import('../src/analysis-jobs-client.mjs');
+ const job={target:40,status:'running',profile:{name:'Example'}};
+ assert.equal(hasEarlyResults({...job,progress:25}),false);
+ assert.equal(hasEarlyResults({...job,progress:27}),true);
 });

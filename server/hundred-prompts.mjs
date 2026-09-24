@@ -1,10 +1,11 @@
 import {asksForOptions} from './ai-analysis.mjs';
 import {namedEvidence,ambiguousBrandName} from './evidence-normalization.mjs';
 export const BUYER_INTENTS=['Discovery','Comparison','Buying decisions','Use cases'];
-export const PROMPT_TARGET=100;
+export const PROMPT_TARGET=40;
+export const PROMPTS_PER_INTENT=PROMPT_TARGET/BUYER_INTENTS.length;
 const normalize=s=>s.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
 export function nextPromptBatch(questions=[]){
- for(const intent of BUYER_INTENTS){const count=questions.filter(q=>q.intent===intent).length;if(count<25)return {intent,count:25-count};}
+ for(const intent of BUYER_INTENTS){const count=questions.filter(q=>q.intent===intent).length;if(count<PROMPTS_PER_INTENT)return {intent,count:PROMPTS_PER_INTENT-count};}
  return null;
 }
 export function appendPromptBatch(plan,batch,expected,names=[]){
@@ -19,5 +20,5 @@ export function appendPromptBatch(plan,batch,expected,names=[]){
   if(questions.length===expected.count)break;
  }
  if(questions.length!==expected.count)throw Error('OpenAI returned invalid, repeated or branded buyer questions.');
- return {...plan,questions:[...prior,...questions.map((q,i)=>({...q,id:`expanded-${prior.length+i+1}`}))],target:100,createdAt:plan?.createdAt||new Date().toISOString()};
+ return {...plan,questions:[...prior,...questions.map((q,i)=>({...q,id:`expanded-${prior.length+i+1}`}))],target:PROMPT_TARGET,createdAt:plan?.createdAt||new Date().toISOString()};
 }

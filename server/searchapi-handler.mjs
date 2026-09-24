@@ -1,6 +1,6 @@
 import {coalescedSave} from './coalesced-save.mjs';
 import {runBenchmarkBatch} from './benchmark-batch.mjs';
-import {BUYER_INTENTS,appendPromptBatch,PROMPT_TARGET} from './hundred-prompts.mjs';
+import {BUYER_INTENTS,appendPromptBatch,PROMPT_TARGET,PROMPTS_PER_INTENT} from './hundred-prompts.mjs';
 import {requestWithReservation} from './provider-request.mjs';
 import {refreshPositions} from './answer-position.mjs';
 import {rollbackOnboarding} from './rollback-onboarding.mjs';
@@ -27,7 +27,7 @@ export function normalizeAnswer(data, business, prompt, engine='chatgpt') {
   return { id: data.search_metadata.id, at: new Date().toISOString(), engine:({chatgpt:'ChatGPT Search',gemini:'Gemini',perplexity:'Perplexity'})[engine], method:`SearchAPI · ${engine}`, prompt, answer:data.markdown, mentioned, cited:sources.some(s=>{const h=new URL(s).hostname.replace(/^www\./,'');return h===business.domain||h.endsWith('.'+business.domain);}), position:null, sentiment:'Not assessed', topic:'Manual scans', type:normalize(prompt).includes(normalize(business.name))?'Branded':'Unbranded', location:'Not specified', sources, fanout:(data.search_queries||[]).filter(q=>typeof q==='string'), competitors:[], comparisonAssessed:false, webSearchPerformed:data.response_metadata?.is_web_search_performed===true, model:data.response_metadata?.model||null };
 }
 export function searchapiHandler({local=false, key='', analysisKey='', analysisBudget=1, direct={}, googleTraffic=null, directory, store, budgetStore=null, request=fetch, crawl=crawlCoverage, benchmarkConcurrency=24, onBenchmarkProgress=async()=>{}}={}) {
- const budget=Number.isFinite(analysisBudget)&&analysisBudget>0?Math.min(analysisBudget,25):1;
+ const budget=Number.isFinite(analysisBudget)&&analysisBudget>0?Math.min(analysisBudget,30):1;
  const maximumAnalysisAttempts=Math.floor(budget/0.05);
  let busy=false;
  const storage=store||localCollectorStore(directory);let leaseToken;
@@ -200,7 +200,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
    if(action==='benchmarkStep'){
     if(!analysisKey)throw Error('OpenAI analysis is not configured.');
     const plan=state.plans?.[business.domain]||{questions:[]};
-    const batches=BUYER_INTENTS.map(intent=>({intent,count:25-plan.questions.filter(q=>q.intent===intent).length})).filter(batch=>batch.count>0);
+    const batches=BUYER_INTENTS.map(intent=>({intent,count:PROMPTS_PER_INTENT-plan.questions.filter(q=>q.intent===intent).length})).filter(batch=>batch.count>0);
     if(batches.length){
      const excluded=[business.name,business.domain,...(aliases()[business.name]||[]),...competitors];
      const drafts=await Promise.allSettled(batches.map(async batch=>{
@@ -221,7 +221,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
     }
     const current=state.benchmarks?.[business.domain];
     if(!current||current.total!==PROMPT_TARGET){
-     state.benchmarks={...state.benchmarks,[business.domain]:{...(current||{}),status:'running',engine:'OpenAI Web Search',total:PROMPT_TARGET,completed:current?.completed||[],startedAt:current?.startedAt||new Date().toISOString(),finishedAt:null,error:''}};
+     state.benchmarks={...state.benchmarks,[business.domain]:{...(current||{}),status:'running',engine:'OpenAI Web Search',total:PROMPT_TARGET,completed:(current?.completed||[]).filter(id=>BUYER_INTENTS.flatMap(intent=>plan.questions.filter(q=>q.intent===intent).slice(0,PROMPTS_PER_INTENT)).some(q=>q.id===id)),startedAt:current?.startedAt||new Date().toISOString(),finishedAt:null,error:''}};
      await save(state);
     }
    }
@@ -257,7 +257,7 @@ export function searchapiHandler({local=false, key='', analysisKey='', analysisB
      }
      state.plans={...state.plans,[business.domain]:{...planned,createdAt:new Date().toISOString(),questions:planned.questions.map((q,i)=>({...q,id:`prompt-${i+1}`}))}};await save(state);
     }
-    const target=[32,100].includes(state.benchmarks?.[business.domain]?.total)?state.benchmarks[business.domain].total:20;
+    const target=[32,40,100].includes(state.benchmarks?.[business.domain]?.total)?state.benchmarks[business.domain].total:20;
     const intents=['Discovery','Comparison','Buying decisions','Use cases'];
     const selected=Array.from({length:target/4},(_,i)=>intents.map(intent=>state.plans[business.domain].questions.filter(q=>q.intent===intent)[i])).flat().filter(Boolean);
     if(selected.length!==target)throw Error(`The benchmark needs ${target/4} questions for each buyer intent.`);

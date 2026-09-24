@@ -38,11 +38,11 @@ export async function fetchWebsite(input, remaining = 3) {
       if (status < 200 || status >= 300) { response.resume(); reject(new Error(`The website returned HTTP ${status}. Try its public home page or enter the business details manually.`)); return; }
       if (!/text\/html|application\/xhtml\+xml/i.test(response.headers['content-type'] || '')) { response.resume(); reject(new Error('That link is not a web page. Use the business website.')); return; }
       let bytes = 0; const chunks = [];
-      response.on('data', chunk => { bytes += chunk.length; if (bytes > 2_000_000) request.destroy(new Error('This page is too large. Try a simpler public page.')); else chunks.push(chunk); });
+      response.on('data', chunk => { bytes += chunk.length; if (bytes > 8_000_000) request.destroy(new Error('This page is too large. Try a simpler public page.')); else chunks.push(chunk); });
       response.on('end', () => resolve({ html: Buffer.concat(chunks).toString('utf8'), url: url.href }));
       response.on('error', reject);
     });
-    const timer = setTimeout(() => request.destroy(new Error('The website took too long to respond. Try again or enter details manually.')), 6000);
+    const timer = setTimeout(() => request.destroy(new Error('The website took too long to respond. Try again or enter details manually.')), 12000);
     request.on('close', () => clearTimeout(timer)); request.on('error', reject);
   });
   if ('redirect' in result) {

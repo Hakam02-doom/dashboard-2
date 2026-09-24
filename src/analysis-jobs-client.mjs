@@ -18,4 +18,4 @@ export async function followAnalysisJob(id,{request,onJob=()=>{},sleep=pause,sig
  throw new DOMException('Stopped watching the analysis','AbortError');
 }
 
-export const hasEarlyResults=job=>job?.target===100&&!!job.profile&&job.progress>=23&&['queued','running'].includes(job.status);
+export const hasEarlyResults=job=>[40,100].includes(job?.target)&&!!job.profile&&job.progress>=20+Math.floor(4/job.target*79)&&['queued','running'].includes(job.status);

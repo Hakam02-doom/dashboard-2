@@ -4,8 +4,10 @@ import {serverClient,verifiedUser,internalRequest} from './cloud-runtime.mjs';
 import {cloudCollectorStore,cloudBudgetStore} from './collector-store.mjs';
 import {websiteUrl,analyzeWebsite} from './website-analysis.mjs';
 import {searchWebsiteProfile} from './website-search-fallback.mjs';
+import {PROMPT_TARGET} from './hundred-prompts.mjs';
 import {searchapiHandler} from './searchapi-handler.mjs';
 
+export const canUseWebsiteFallback=e=>/HTTP (403|429|5\d\d)|took too long to (respond|resolve)|This page is too large/i.test(e?.message||'')||['ECONNRESET','ETIMEDOUT','EAI_AGAIN'].includes(e?.code);
 const origin='https://dashboard-2-sandy.vercel.app';
 const send=(res,status,body)=>{res.statusCode=status;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(body));};
 export const publicJob=j=>j?({id:j.id,url:j.url,domain:j.domain,status:j.status,stage:j.stage,progress:j.progress,target:j.target||3,profile:j.profile,error:j.error,updatedAt:j.updated_at}):null;
@@ -35,8 +37,8 @@ export function createJobsApi(env,{client=serverClient(env),local=false}={}){
    await rpc(client,'ai_analysis_wake').catch(()=>{}); // minute scheduler is the durable fallback
    return send(res,202,{job:publicJob(job)});
   }catch(e){
-   const limit=/DAILY_VISITOR_LIMIT|DAILY_NETWORK_LIMIT|QUEUE_FULL/.test(e.message||'');
-   const error=/DAILY_/.test(e.message||'')?'Today’s analysis limit has been reached. Your saved reports remain available.':/QUEUE_FULL/.test(e.message||'')?'Analysis capacity is full. Please try again shortly.':/^(Enter|Use |This address)/.test(e.message||'')?e.message:e.status===503?'Analysis is temporarily unavailable. Please try again.':'We could not start or load the analysis. Please refresh and try again.';
+   const limit=/ANALYSIS_BUDGET_LOW|DAILY_VISITOR_LIMIT|DAILY_NETWORK_LIMIT|QUEUE_FULL/.test(e.message||'');
+   const error=/ANALYSIS_BUDGET_LOW/.test(e.message||'')?'Analysis is paused: the service usage allowance is too low to finish 40 questions. Please contact the site owner. No analysis was started.':/DAILY_/.test(e.message||'')?'Today’s analysis limit has been reached. Your saved reports remain available.':/QUEUE_FULL/.test(e.message||'')?'Analysis capacity is full. Please try again shortly.':/^(Enter|Use |This address)/.test(e.message||'')?e.message:e.status===503?'Analysis is temporarily unavailable. Please try again.':'We could not start or load the analysis. Please refresh and try again.';
    return send(res,limit?429:503,{error});
   }
  };
@@ -68,7 +70,7 @@ export function journaledRequest(client,jobId,request=fetch){
  journal.managesReservations=true;
  return journal;
 }
-export async function runAnalysisStep(job,{client,env,request=fetch,analyze=analyzeWebsite}){
+export async function runAnalysisStep(job,{client,env,request=fetch,analyze=analyzeWebsite,fallback=searchWebsiteProfile}){
  const deadline=Date.now()+210000;
  const boundedRequest=(url,options={})=>request(url,{...options,signal:AbortSignal.any([...(options.signal?[options.signal]:[]),AbortSignal.timeout(Math.max(1,deadline-Date.now()))])});
  const store=cloudCollectorStore(client,job.owner_id),journal=journaledRequest(client,job.id,boundedRequest);
@@ -80,8 +82,8 @@ export async function runAnalysisStep(job,{client,env,request=fetch,analyze=anal
    if(state.activeRunId!==job.id)await rpc(client,'ai_analysis_discard_previous',{account_id:job.owner_id,current_job:job.id,lock_id:lock});
   let profile;
   try{profile=await analyze(job.url);}catch(e){
-   if(!/HTTP (403|429)|took too long to (respond|resolve)/i.test(e.message||''))throw e;
-   profile=await searchWebsiteProfile(job.url,{client,key:env.SEARCHAPI_API_KEY,request:journal});
+   if(!canUseWebsiteFallback(e))throw e;
+   profile=await fallback(job.url,{client,key:env.SEARCHAPI_API_KEY,request:journal});
   }
   const {error}=await client.from('ai_businesses').upsert({owner_id:job.owner_id,domain:profile.domain,name:profile.name,profile},{onConflict:'owner_id,domain'});if(error)throw Error('The business details could not be saved.');
   return {status:'queued',stage:'Finding competitors',progress:10,profile};
@@ -94,18 +96,18 @@ export async function runAnalysisStep(job,{client,env,request=fetch,analyze=anal
   if(measured<4||measured-lastProgress<4)return;
   lastProgress=measured;
   // This checkpoint is cosmetic. Answer persistence has already succeeded.
-  await client.from('ai_analysis_jobs').update({stage:`Analyzing buyer questions · ${measured} of 100 measured`,progress:20+Math.floor(measured*.79),updated_at:new Date().toISOString()}).eq('id',job.id).eq('lease',job.lease).abortSignal(AbortSignal.timeout(5000));
+  await client.from('ai_analysis_jobs').update({stage:`Analyzing buyer questions · ${measured} of ${PROMPT_TARGET} measured`,progress:20+Math.floor(measured/PROMPT_TARGET*79),updated_at:new Date().toISOString()}).eq('id',job.id).eq('lease',job.lease).abortSignal(AbortSignal.timeout(5000));
  };
  const handler=searchapiHandler({local:true,key:env.SEARCHAPI_API_KEY,analysisKey:env.OPENAI_API_KEY,analysisBudget:Number(env.AI_ANALYSIS_BUDGET_USD||1),store,budgetStore:cloudBudgetStore(client),request:journal,benchmarkConcurrency:concurrency,onBenchmarkProgress});
- const req=internalRequest({action:job.target===100?'benchmarkStep':'baselineStep',business:job.profile});req.internalWorker=true;
+ const req=internalRequest({action:job.target>=40?'benchmarkStep':'baselineStep',business:job.profile});req.internalWorker=true;
  let status,result;await handler(req,{setHeader(){},set statusCode(v){status=v;},end(raw){result=JSON.parse(raw);}});
  if(result?.code==='ANALYSIS_BUSY')return {status:'queued',stage:'Waiting for your previous analysis',progress:job.progress,delay:15};
- if(status!==200||(job.target===100?result.benchmark:result.report)?.status==='partial')throw Error(result.error||result.benchmark?.error||result.report?.error||'Analysis could not finish. Saved answers are preserved.');
- if(job.target===100){
-  const measured=result.benchmark?.total===100?result.benchmark.completed.length:0;
+ if(status!==200||(job.target>=40?result.benchmark:result.report)?.status==='partial')throw Error(result.error||result.benchmark?.error||result.report?.error||'Analysis could not finish. Saved answers are preserved.');
+ if(job.target>=40){
+  const measured=result.benchmark?.total===PROMPT_TARGET?result.benchmark.completed.length:0;
   const planned=result.plan?.questions?.length||0;
-  if(result.benchmark?.total===100&&result.benchmark.status==='complete')return {status:'complete',stage:'100 buyer questions measured · Your insights are ready',progress:100};
-  return {status:'queued',stage:planned<100?`Preparing buyer questions · ${planned} of 100 planned`:`Analyzing buyer questions · ${measured} of 100 measured`,progress:planned<100?10+Math.floor(planned/10):20+Math.floor(measured*.79)};
+  if(result.benchmark?.total===PROMPT_TARGET&&result.benchmark.status==='complete')return {status:'complete',stage:`${PROMPT_TARGET} buyer questions measured · Your insights are ready`,progress:100};
+  return {status:'queued',stage:planned<PROMPT_TARGET?`Preparing buyer questions · ${planned} of ${PROMPT_TARGET} planned`:`Analyzing buyer questions · ${measured} of ${PROMPT_TARGET} measured`,progress:planned<PROMPT_TARGET?10+Math.floor(planned/PROMPT_TARGET*10):20+Math.floor(measured/PROMPT_TARGET*79)};
  }
  const report=result.report;
  if(report?.status==='complete')return {status:'complete',stage:'Your insights are ready',progress:100};
@@ -122,7 +124,8 @@ export function createJobsWorker(env,{client=serverClient(env),step=runAnalysisS
    job=await rpc(client,'ai_analysis_claim');if(!job)return send(res,200,{idle:true});
    let next;
    try{next=await step(job,{client,env});}catch(e){
-    const known=/^(OpenAI|SearchAPI|Saved scans|The website|This website|No usable|Indexed|Shared|Search snippet|The business|Analysis)/.test(e.message||'');
+    console.error('Analysis step failed', {jobId:job.id,domain:job.domain,code:e.code||e.name,message:e.message});
+    const known=/^(OpenAI|SearchAPI|Saved scans|The website|This website|This page|That link|No usable|Indexed|Shared|Search snippet|The business|Analysis)/.test(e.message||'');
     const storageFailure=/Saved scans cloud storage failed|request journal is unavailable|Shared collection budget could not be checked/.test(e.message||'');
     next=storageFailure&&job.attempts<3?{status:'queued',stage:'Reconnecting to analysis storage',progress:job.progress,delay:15}:{status:'failed',stage:'Analysis needs attention',progress:job.progress,error:known?e.message:'Analysis was interrupted. Saved answers are preserved; please try again later.'};
    }
