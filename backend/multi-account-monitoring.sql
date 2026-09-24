@@ -83,3 +83,15 @@ revoke all on function public.ai_workspace_init(uuid),public.ai_workspace_read(u
 grant execute on function public.ai_workspace_init(uuid),public.ai_workspace_read(uuid),public.ai_workspace_lock(uuid,uuid),public.ai_workspace_write(uuid,jsonb,uuid),public.ai_workspace_unlock(uuid,uuid),public.ai_global_usage(),public.ai_global_reserve(text,int) to service_role;
 revoke all on function public.ai_workspace_claim(uuid) from public,anon,authenticated;
 grant execute on function public.ai_workspace_claim(uuid) to service_role;
+
+-- Keep large answer histories in Postgres when deciding whether a worker is
+-- needed. Only owner IDs cross the API boundary.
+create function public.ai_scheduled_owners() returns setof uuid
+language sql security invoker set search_path='' as $$
+  select distinct w.owner_id
+  from public.ai_collector_workspaces w
+  cross join lateral jsonb_each(coalesce(w.payload->'schedules','{}'::jsonb)) s(key,value)
+  where s.value->>'enabled'='true';
+$$;
+revoke all on function public.ai_scheduled_owners() from public,anon,authenticated;
+grant execute on function public.ai_scheduled_owners() to service_role;

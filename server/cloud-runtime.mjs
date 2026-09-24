@@ -41,7 +41,7 @@ export function createRuntime(env,{local=false,directory='.local-ai'}={}){
  const collectorFor=ownerId=>searchapiHandler({direct,googleTraffic,local:true,key:env.SEARCHAPI_API_KEY,analysisKey:env.OPENAI_API_KEY,analysisBudget:Number(env.AI_ANALYSIS_BUDGET_USD||1),store:client?cloudCollectorStore(client,ownerId):localStore,budgetStore});
  const tick=async()=>{
   let owners=[null];
-  if(client){const {data,error}=await client.from('ai_collector_workspaces').select('owner_id,payload').limit(100);if(error)throw Error('Could not load scheduled workspaces.');owners=data.filter(row=>Object.values(row.payload?.schedules||{}).some(s=>s.enabled)).map(row=>row.owner_id);}
+  if(client){const {data,error}=await client.rpc('ai_scheduled_owners').abortSignal(AbortSignal.timeout(10000));if(error)throw Error('Could not load scheduled workspaces.');owners=data;}
   for(const ownerId of owners){if(!client){const state=await localStore.load();if(!Object.values(state.schedules||{}).some(s=>s.enabled))continue;}
    const req=internalRequest({action:'scheduleTick',business:{name:'Scheduler',domain:'worker.example'}});req.internalWorker=true;let result;
    await collectorFor(ownerId)(req,{setHeader(){},end(body){result={status:this.statusCode,...JSON.parse(body)};}});if(result&&!result.idle)return result;
