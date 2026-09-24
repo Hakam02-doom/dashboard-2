@@ -48,17 +48,3 @@
   .sidebar > .sidebar-toggle + .nav-rail { margin-top: 12px; }
   .sidebar-expanded > .sidebar-toggle { width: calc(100% - 3px); }
 }
-
-/* Join the main and utility links into one continuous desktop sidebar panel. */
-@media (min-width: 561px) {
-  .sidebar > .nav-rail {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-    padding-bottom: 0;
-  }
-  .sidebar > .bottom-rail {
-    margin-top: 0;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-  }
-}
